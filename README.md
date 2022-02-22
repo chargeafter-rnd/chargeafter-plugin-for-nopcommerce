@@ -9,8 +9,6 @@ ChargeAfter APIs: [https://docs.chargeafter.com/reference/api-overview](https://
 
 ChargeAfter Docs: [https://docs.chargeafter.com](https://docs.chargeafter.com/docs)
 
-===========
-
 ## Description
 
 ChargeAfter is a market-leading consumer financing platform that connects retailers and lenders to offer consumers personalized Point of Sale Financing options during shopping and at checkout from multiple lenders.
