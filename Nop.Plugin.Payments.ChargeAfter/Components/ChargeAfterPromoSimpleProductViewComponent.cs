@@ -1,0 +1,81 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Nop.Core;
+using Nop.Services.Cms;
+using Nop.Web.Framework.Components;
+using Nop.Web.Framework.Infrastructure;
+
+namespace Nop.Plugin.Payments.ChargeAfter.Components
+{
+    [ViewComponent(Name = Defaults.PROMO_SIMPLE_PRODUCT_VIEW_COMPONENT_NAME)]
+    public class ChargeAfterPromoSimpleProductViewComponent : NopViewComponent
+    {
+        #region Fields
+
+        private readonly IWidgetPluginManager _widgetPluginManager;
+        private readonly ChargeAfterPaymentSettings _settings;
+        private readonly IStoreContext _storeContext;
+        private readonly IWorkContext _workContext;
+
+        #endregion
+
+        #region Ctor
+
+        public ChargeAfterPromoSimpleProductViewComponent(
+            IWidgetPluginManager widgetPluginManager,
+            ChargeAfterPaymentSettings settings,
+            IStoreContext storeContext,
+            IWorkContext workContext
+        )
+        {
+            _widgetPluginManager = widgetPluginManager;
+            _settings = settings;
+            _storeContext = storeContext;
+            _workContext = workContext;
+        }
+
+        #endregion
+
+        #region Methods
+
+        public IViewComponentResult Invoke(string widgetZone, object additionalData)
+        {
+            if (!_widgetPluginManager.IsPluginActive(Defaults.SystemName, _workContext.CurrentCustomer, _storeContext.CurrentStore.Id))
+                return Content(string.Empty);
+
+            if (string.IsNullOrEmpty(ChargeAfterHelper.GetPublicKeyFromSettings(_settings)))
+                return Content(string.Empty);
+
+            //ensure that it's a proper widget zone
+            if (!widgetZone.Equals(PublicWidgetZones.ProductDetailsEssentialTop) && 
+                !widgetZone.Equals(PublicWidgetZones.ProductDetailsOverviewTop) && 
+                !widgetZone.Equals(PublicWidgetZones.ProductDetailsEssentialBottom))
+            {
+                return Content(string.Empty);
+            }
+                
+
+            if((widgetZone.Equals(PublicWidgetZones.ProductDetailsEssentialTop) && !_settings.EnableSimplePromoProductBeforeContent) ||
+               (widgetZone.Equals(PublicWidgetZones.ProductDetailsOverviewTop) && !_settings.EnableSimplePromoProductAfterTitle) ||
+               (widgetZone.Equals(PublicWidgetZones.ProductDetailsEssentialBottom) && !_settings.EnableSimplePromoProductAfterDesc))
+            {
+                return Content(string.Empty);
+            }
+                
+            var widgetType = _settings.WidgetTypeSimplePromoProductBeforeContent;
+            if(widgetZone.Equals(PublicWidgetZones.ProductDetailsOverviewTop))
+            {
+                widgetType = _settings.WidgetTypeSimplePromoProductAfterTitle;
+            } 
+            else if(widgetZone.Equals(PublicWidgetZones.ProductDetailsEssentialBottom))
+            {
+                widgetType = _settings.WidgetTypeSimplePromoProductAfterDesc;
+            }
+
+            var bannerType = ChargeAfterHelper.GetPromoWidgetType(widgetType);
+
+            return View("~/Plugins/Payments.ChargeAfter/Views/Promo/PromoSimple.cshtml", (widgetZone, bannerType));
+        }
+
+        #endregion
+    }
+}

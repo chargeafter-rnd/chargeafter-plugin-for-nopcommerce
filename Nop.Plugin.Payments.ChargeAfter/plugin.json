@@ -1,0 +1,11 @@
+{
+  "Group": "Payment methods",
+  "FriendlyName": "ChargeAfter Consumer Financing",
+  "SystemName": "Payments.ChargeAfter",
+  "Version": "1.0",
+  "SupportedVersions": [ "4.20", "4.30" ],
+  "Author": "ChargeAfter",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Payments.ChargeAfter.dll",
+  "Description": "The global Point of Sale financing network for merchants and lenders."
+}

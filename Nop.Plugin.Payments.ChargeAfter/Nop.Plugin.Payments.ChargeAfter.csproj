@@ -1,0 +1,76 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <Copyright>Copyright © ChargeAfter</Copyright>
+        <Company>ChargeAfter</Company>
+        <Authors>ChargeAfter</Authors>
+        <PackageLicenseUrl></PackageLicenseUrl>
+        <PackageProjectUrl>http://docs.chargeafter.com/</PackageProjectUrl>
+        <RepositoryUrl></RepositoryUrl>
+        <RepositoryType>Git</RepositoryType>
+        <OutputPath>..\..\Presentation\Nop.Web\Plugins\Payments.ChargeAfter</OutputPath>
+        <OutDir>$(OutputPath)</OutDir>
+        <!--Set this parameter to true to get the dlls copied from the NuGet cache to the output of your project. 
+        You need to set this parameter to true if your plugin has a nuget package to ensure that   
+        the dlls copied from the NuGet cache to the output of your project-->
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <None Remove="logo.png" />
+      <None Remove="plugin.json" />
+      <None Remove="Views\Configuration\Configure.cshtml" />
+      <None Remove="Views\Promo\PromoLineOfCredit.cshtml" />
+      <None Remove="Views\Promo\PromoScript.cshtml" />
+      <None Remove="Views\Promo\PromoSimple.cshtml" />
+      <None Remove="Views\_ViewImports.cshtml" />
+      <None Remove="Views\Checkout\CheckoutScript.cshtml" />
+      <None Remove="Views\Payment\PaymentInfo.cshtml" />
+      <None Remove="Views\Admin\Order.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="logo.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="plugin.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Views\Configuration\Configure.cshtml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Views\Promo\PromoLineOfCredit.cshtml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Views\Promo\PromoScript.cshtml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Views\Promo\PromoSimple.cshtml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Views\_ViewImports.cshtml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Views\Checkout\CheckoutScript.cshtml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Views\Payment\PaymentInfo.cshtml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Views\Admin\Order.cshtml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Presentation\Nop.Web.Framework\Nop.Web.Framework.csproj" />
+        <ProjectReference Include="..\..\Presentation\Nop.Web\Nop.Web.csproj" />
+        <ClearPluginAssemblies Include="$(MSBuildProjectDirectory)\..\..\Build\ClearPluginAssemblies.proj" />
+    </ItemGroup>
+
+    <!-- This target execute after "Build" target -->
+    <Target Name="NopTarget" AfterTargets="Build">
+        <!-- Delete unnecessary libraries from plugins path -->
+        <MSBuild Projects="@(ClearPluginAssemblies)" Properties="PluginPath=$(MSBuildProjectDirectory)\$(OutDir)" Targets="NopClear" />
+    </Target>
+</Project>
