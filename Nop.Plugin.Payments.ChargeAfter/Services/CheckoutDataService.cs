@@ -1,6 +1,5 @@
 ﻿using Nop.Core;
 using Nop.Core.Domain.Customers;
-using Nop.Core.Domain.Discounts;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Tax;
 using Nop.Plugin.Payments.ChargeAfter.Domain;
@@ -14,8 +13,6 @@ using Nop.Services.Localization;
 using Nop.Services.Orders;
 using Nop.Services.Payments;
 using Nop.Services.Tax;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Services
@@ -170,7 +167,14 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                 var product = _productService.GetProductById(sci.ProductId);
 
                 // sub total
-                var cartItemSubTotalWithDiscountBase = _taxService.GetProductPrice(product, _shoppingCartService.GetSubTotal(sci, true, out var shoppingCartItemDiscountBase, out _, out var maximumDiscountQty), out _);
+                var cartItemSubTotalWithDiscountBase = _taxService.GetProductPrice(
+                    product, 
+                    _shoppingCartService.GetSubTotal(sci, true, out var shoppingCartItemDiscountBase, out _, out var maximumDiscountQty),
+                    includingTax: false,
+                    customer,
+                    out _
+                );
+
                 var cartItemSubTotalWithDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(cartItemSubTotalWithDiscountBase, _workContext.WorkingCurrency);
 
                 // cart item
@@ -182,7 +186,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                     Name = _localizationService.GetLocalized(product, x => x.Name),
                     Quantity = sci.Quantity,
                     UnitPrice = (float)cartItemSubTotalWithDiscount/sci.Quantity,
-                    Leasable = (bool)product.IsRental
+                    Leasable = true
                 };
 
                 model.Items.Add(itemModel);
@@ -203,11 +207,21 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             model.TotalShippingAmount = 0;
 
             // shipping total
-            var shoppingCartShippingBase = _orderTotalCalculationService.GetShoppingCartShippingTotal(shoppingCartItems, true);
-            if (shoppingCartShippingBase.HasValue)
+            decimal? shippingExclTax = _orderTotalCalculationService.GetShoppingCartShippingTotal(shoppingCartItems, false);
+            decimal? shippingInclTax = _orderTotalCalculationService.GetShoppingCartShippingTotal(shoppingCartItems, true);
+            
+            var shippingTax = shippingInclTax.Value - shippingExclTax.Value;
+
+            if (shippingExclTax.HasValue)
             {
-                model.TotalShippingAmount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartShippingBase.Value, _workContext.WorkingCurrency);
+                model.TotalShippingAmount = _currencyService.ConvertFromPrimaryStoreCurrency(shippingExclTax.Value, _workContext.WorkingCurrency);
             }
+
+            //var shoppingCartShippingBase = _orderTotalCalculationService.GetShoppingCartShippingTotal(shoppingCartItems, false);
+            //if (shoppingCartShippingBase.HasValue)
+            //{
+            //    model.TotalShippingAmount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartShippingBase.Value, _workContext.WorkingCurrency);
+            //}
 
             var shoppingCartTaxBase = _orderTotalCalculationService.GetTaxTotal(shoppingCartItems, out var taxRates);
             model.TotalTaxAmount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartTaxBase, _workContext.WorkingCurrency);
@@ -220,7 +234,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
 
             if(appliedDiscounts != null) 
             {
-                var orderTotalAmount = subTotalWithoutDiscountBase + model.TotalShippingAmount + model.TotalTaxAmount;
+                var orderTotalAmount = subTotalWithoutDiscountBase + model.TotalShippingAmount + shippingTax + model.TotalTaxAmount;
                 foreach (var discount in appliedDiscounts)
                 {
                     var currentDiscountValue = _discountService.GetDiscountAmount(discount, orderTotalAmount);
@@ -237,8 +251,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                         };
 
                         model.DiscountItems.Add(discountItem);
-                    }
-                    // 6725 + 554.81 = 7 279,81 | 1455  
+                    }  
                 }
             }
 
