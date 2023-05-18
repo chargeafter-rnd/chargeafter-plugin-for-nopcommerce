@@ -1,0 +1,221 @@
+﻿@model Nop.Plugin.Payments.ChargeAfter.Models.ConfigurationModel
+@{
+    // ReSharper disable once Razor.LayoutNotResolved
+    Layout = "_ConfigurePlugin";
+}
+
+@await Component.InvokeAsync("StoreScopeConfiguration")
+
+<form asp-controller="PaymentChargeAfter" asp-action="Configure" method="post" autocomplete="off">
+    <div class="cards-group">
+        <div class="card card-default">
+            <div class="card-header">
+                @T("Plugins.Payments.ChargeAfter.Header.Payment")
+            </div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="ProductionPublicKey_OverrideForStore" asp-input="ProductionPublicKey" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="ProductionPublicKey" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="ProductionPublicKey" />
+                        <span asp-validation-for="ProductionPublicKey"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="ProductionPrivateKey_OverrideForStore" asp-input="ProductionPrivateKey" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="ProductionPrivateKey" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="ProductionPrivateKey" asp-value="@Model.ProductionPrivateKey" html-attributes="@(new { value = Model.ProductionPrivateKey })" />
+                        <span asp-validation-for="ProductionPrivateKey"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="UseProduction_OverrideForStore" asp-input="UseProduction" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="UseProduction" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="UseProduction" />
+                        <span asp-validation-for="UseProduction"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="SandboxPublicKey_OverrideForStore" asp-input="SandboxPublicKey" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="SandboxPublicKey" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="SandboxPublicKey" />
+                        <span asp-validation-for="SandboxPublicKey"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="SandboxPrivateKey_OverrideForStore" asp-input="SandboxPrivateKey" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="SandboxPrivateKey" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="SandboxPrivateKey" asp-value="@Model.SandboxPrivateKey" html-attributes="@(new { value = Model.SandboxPrivateKey })" />
+                        <span asp-validation-for="SandboxPrivateKey"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-default">
+            <div class="card-header">
+                @T("Plugins.Payments.ChargeAfter.Header.PromoLineOfCredit")
+            </div>
+            <div class="card-body">
+                @if (string.IsNullOrEmpty(Model.FinancingPageUrlLineOfCreditPromo))
+                {
+                    Model.EnableLineOfCreditPromo = true;
+                    Model.FinancingPageUrlLineOfCreditPromo = "/";
+                }
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="EnableLineOfCreditPromo_OverrideForStore" asp-input="EnableLineOfCreditPromo" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="EnableLineOfCreditPromo" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="EnableLineOfCreditPromo" />
+                        <span asp-validation-for="EnableLineOfCreditPromo"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="FinancingPageUrlLineOfCreditPromo_OverrideForStore" asp-input="FinancingPageUrlLineOfCreditPromo" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="FinancingPageUrlLineOfCreditPromo" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="FinancingPageUrlLineOfCreditPromo" />
+                        <span asp-validation-for="FinancingPageUrlLineOfCreditPromo"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-default">
+            <div class="card-header">
+                @T("Plugins.Payments.ChargeAfter.Header.PromoSimple")
+            </div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="EnableSimplePromoBeforeContent_OverrideForStore" asp-input="EnableSimplePromoBeforeContent" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="EnableSimplePromoBeforeContent" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="EnableSimplePromoBeforeContent" />
+                        <span asp-validation-for="EnableSimplePromoBeforeContent"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="WidgetTypeSimplePromoBeforeContentId_OverrideForStore" asp-input="WidgetTypeSimplePromoBeforeContentId" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="WidgetTypeSimplePromoBeforeContentValues" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-select asp-for="WidgetTypeSimplePromoBeforeContentId" asp-items="Model.WidgetTypeSimplePromoBeforeContentValues" />
+                        <span asp-validation-for="WidgetTypeSimplePromoBeforeContentId"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="EnableSimplePromoAfterContent_OverrideForStore" asp-input="EnableSimplePromoAfterContent" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="EnableSimplePromoAfterContent" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="EnableSimplePromoAfterContent" />
+                        <span asp-validation-for="EnableSimplePromoAfterContent"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="WidgetTypeSimplePromoAfterContentId_OverrideForStore" asp-input="WidgetTypeSimplePromoAfterContentId" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="WidgetTypeSimplePromoAfterContentValues" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-select asp-for="WidgetTypeSimplePromoAfterContentId" asp-items="Model.WidgetTypeSimplePromoAfterContentValues" />
+                        <span asp-validation-for="WidgetTypeSimplePromoAfterContentId"></span>
+                    </div>
+                </div>
+                <hr />
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="EnableSimplePromoProductBeforeContent_OverrideForStore" asp-input="EnableSimplePromoProductBeforeContent" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="EnableSimplePromoProductBeforeContent" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="EnableSimplePromoProductBeforeContent" />
+                        <span asp-validation-for="EnableSimplePromoProductBeforeContent"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="WidgetTypeSimplePromoProductBeforeContentId_OverrideForStore" asp-input="WidgetTypeSimplePromoProductBeforeContentId" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="WidgetTypeSimplePromoProductBeforeContentValues" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-select asp-for="WidgetTypeSimplePromoProductBeforeContentId" asp-items="Model.WidgetTypeSimplePromoProductBeforeContentValues" />
+                        <span asp-validation-for="WidgetTypeSimplePromoProductBeforeContentId"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="EnableSimplePromoProductAfterTitle_OverrideForStore" asp-input="EnableSimplePromoProductAfterTitle" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="EnableSimplePromoProductAfterTitle" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="EnableSimplePromoProductAfterTitle" />
+                        <span asp-validation-for="EnableSimplePromoProductAfterTitle"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="WidgetTypeSimplePromoProductAfterTitleId_OverrideForStore" asp-input="WidgetTypeSimplePromoProductAfterTitleId" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="WidgetTypeSimplePromoProductAfterTitleValues" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-select asp-for="WidgetTypeSimplePromoProductAfterTitleId" asp-items="Model.WidgetTypeSimplePromoProductAfterTitleValues" />
+                        <span asp-validation-for="WidgetTypeSimplePromoProductAfterTitleId"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="EnableSimplePromoProductAfterDesc_OverrideForStore" asp-input="EnableSimplePromoProductAfterDesc" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="EnableSimplePromoProductAfterDesc" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="EnableSimplePromoProductAfterDesc" />
+                        <span asp-validation-for="EnableSimplePromoProductAfterDesc"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="WidgetTypeSimplePromoProductAfterDescId_OverrideForStore" asp-input="WidgetTypeSimplePromoProductAfterDescId" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="WidgetTypeSimplePromoProductAfterDescValues" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-select asp-for="WidgetTypeSimplePromoProductAfterDescId" asp-items="Model.WidgetTypeSimplePromoProductAfterDescValues" />
+                        <span asp-validation-for="WidgetTypeSimplePromoProductAfterDescId"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-default">
+            <div class="card-body">
+                <div class="form-group row">
+                    <div class="col-md-9 col-md-offset-3">
+                        <input type="submit" name="save" class="btn bg-blue" value="@T("Admin.Common.Save")" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

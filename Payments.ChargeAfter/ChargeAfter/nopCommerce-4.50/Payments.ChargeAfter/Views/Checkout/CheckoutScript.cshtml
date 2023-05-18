@@ -1,0 +1,167 @@
+﻿<script type="text/javascript">
+    var caConfig = {
+        apiKey: '@(Model.CaPublicKey)'
+    };
+
+    !function (e, t, c, a, n) {
+        var r, o = t.getElementsByTagName(c)[0];
+        e.ChargeAfter || (e.ChargeAfter = {}),
+        t.getElementById(a) || (e.ChargeAfter.cfg = n, (r = t.createElement(c)).id = a,
+        r.src = "https://cdn@(Model.CaHost)/web/v2/chargeafter.min.js?t=" + 1 * new Date,
+        r.async = !0, o.parentNode.insertBefore(r, o))
+    }
+    (window, document, "script", "chargeafter-checkout-finance", caConfig);
+    
+    var startCheckout = function () {
+        let caData = {
+            consumerDetails: {
+                firstName: "@(Model.ChargeAfterCheckoutUI.FirstName)",
+                lastName: "@(Model.ChargeAfterCheckoutUI.LastName)",
+                email: "@(Model.ChargeAfterCheckoutUI.Email)",
+                mobilePhoneNumber: "@(Model.ChargeAfterCheckoutUI.Phone)",
+                shippingAddress: {
+                    line1: "@(Model.ChargeAfterCheckoutUI.ShippingAddressLine1)",
+                    line2: "@(Model.ChargeAfterCheckoutUI.ShippingAddressLine2)",
+                    city: "@(Model.ChargeAfterCheckoutUI.ShippingAddressCity)",
+                    zipCode: "@(Model.ChargeAfterCheckoutUI.ShippingAddressZipCode)",
+                    state: "@(Model.ChargeAfterCheckoutUI.ShippingAddressState)"
+                },
+                billingAddress: {
+                    line1: "@(Model.ChargeAfterCheckoutUI.BillingAddressLine1)",
+                    line2: "@(Model.ChargeAfterCheckoutUI.BillingAddressLine2)",
+                    city: "@(Model.ChargeAfterCheckoutUI.BillingAddressCity)",
+                    zipCode: "@(Model.ChargeAfterCheckoutUI.BillingAddressZipCode)",
+                    state: "@(Model.ChargeAfterCheckoutUI.BillingAddressState)"
+                }
+            },
+            cartDetails: {
+                items: [@foreach(var item in Model.Items) {
+                    @Html.Raw("{ name: \"" + item.Name + "\", price: " + item.UnitPrice + ", sku: \"" + item.Sku + "\", quantity: " + item.Quantity + ", leasable: " + ( item.Leasable ? "true" : "false" ) + " },")
+                }],
+                @if(Model.DiscountItems.Count > 0)
+                {
+                    @Html.Raw("discounts: [")
+                    @foreach(var item in Model.DiscountItems) {
+                        @Html.Raw("{ name: \"" + item.Name + "\", amount: " + item.Amount + "},")
+                    }
+                    @Html.Raw("],")
+                }
+                taxAmount: @(Model.TotalTaxAmount),
+                shippingAmount: @(Model.TotalShippingAmount),
+                totalAmount: @(Model.TotalAmount)
+            },
+            callback: function (token, data, error) {
+                if (error) {
+                    if (error.code != "BACK_TO_STORE" && error.code != "CONSUMER_CANCELLED") {
+                        returnError(error.message);
+                    }
+                } else if (token) {
+                    returnSuccess(token);
+                }
+            },
+        };
+
+        ChargeAfter.checkout.present(caData);
+    }
+
+    function returnSuccess(token) {
+        console.log('Set confirmation token request: ' + token);
+        createForm('ca_form_success', '@Url.RouteUrl(Defaults.CheckoutPlaceRouteName)', token);
+    }
+
+    function returnError(msg) {
+        var errorEl = document.getElementById('chargeafter-payment-error');
+        if (errorEl) {
+            errorEl.innerHTML = msg;
+        }
+    }
+
+    function createForm(id, action, ca_token) {
+        $.post(action, { ca_token: ca_token })
+            .done(function (response) {
+                console.log(response);
+                if (response.redirect) {
+                    window.location.href = response.redirect;
+                }
+
+                if (response.error) {
+                    returnError(response.message);
+                }
+            })
+            .fail(function () {
+                returnError("Fatal error");
+            });
+    }
+    
+    // Terms
+    function submitCheckoutCA() {
+        // Prevent submit if is not ChargeAfter
+        if ($('#chargeafter-payment').length === 0) {
+            if (typeof scriptChargeAfterPayment !== 'undefined' && scriptChargeAfterPayment !== 0) {
+                eval(scriptChargeAfterPayment);
+            }
+
+            return true;
+        }
+
+        returnError("");
+
+        var termOfServiceOk = true,
+            termsOfService = $('#termsofservice');
+        
+        if (termsOfService.length === 0) {
+            termsOfService = $('#terms-of-service');
+        }
+        
+        if (termsOfService.length > 0 && !termsOfService.is(":hidden")) {
+            if (!termsOfService.is(':checked')) {
+                var readTerms = $("#terms-of-service-warning-box");
+                
+                if (readTerms.length === 0) {
+                    readTerms = $('#read-terms');
+                }
+                
+                readTerms.dialog();
+                termOfServiceOk = false;
+            } else {
+                termOfServiceOk = true;
+            }
+        }
+        
+        if (termOfServiceOk) {
+            startCheckout();
+        }
+        
+        return false;
+    }
+
+    if (typeof scriptChargeAfterPayment === 'undefined') {
+        var scriptChargeAfterPayment;
+    }
+
+    // Init
+    function initCheckoutCA() {
+        if (typeof scriptChargeAfterPayment === 'undefined') {
+            scriptChargeAfterPayment = $('.payment-info-next-step-button').attr('onclick');
+        }
+
+        // Dom Ready
+        $(document).ready(function () {
+            $('.payment-info-next-step-button, .confirm-order-button')
+                .show().prop("onclick", null).unbind().click(submitCheckoutCA);   
+            
+            $('#checkoutForm').find('button[data-complete]')
+                .show().prop("onclick", null).unbind().click(submitCheckoutCA);
+        });
+    }
+
+    // Defer JQuery
+    function deferJqueryLoading(method) {
+        if (window.jQuery && typeof $ == 'function' && window.ChargeAfter) {
+            method();
+        } else {
+            setTimeout(function () { deferJqueryLoading(method) }, 50);
+        }
+    }
+    deferJqueryLoading(initCheckoutCA);
+</script>

@@ -1,0 +1,40 @@
+﻿@model NonLeasableProductModel
+
+@{
+    const string hideLeasableBlockAttributeName = "ProductPage.HideLeasableBlock";
+    var hideLeasableBlock = genericAttributeService.GetAttribute<bool>(workContext.CurrentCustomer, hideLeasableBlockAttributeName);
+}
+
+<nop-panel asp-name="product-non-leasable"
+           asp-icon="fa fa-flag"
+           asp-title="@T("Plugins.Payments.ChargeAfter.Fields.NonLeasable")"
+           asp-hide-block-attribute-name="@hideLeasableBlockAttributeName"
+           asp-hide="@hideLeasableBlock"
+           asp-advanced="false">
+    <div class="panel-body">
+        <p>
+            @T("Plugins.Payments.ChargeAfter.Fields.NonLeasable.Hint")
+        </p>
+
+        @if (Model.ProductId > 0)
+        {
+            <div class="form-group">
+                <div class="col-md-3">
+                    <nop-label asp-for="CaNonLeasable" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="CaNonLeasable" />
+                    <span asp-validation-for="CaNonLeasable"></span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    @T("Plugins.Payments.ChargeAfter.Fields.NonLeasable.SaveBeforeEdit")
+                </div>
+            </div>
+        }
+    </div>
+</nop-panel>

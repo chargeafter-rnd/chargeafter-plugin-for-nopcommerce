@@ -1,0 +1,23 @@
+﻿@using Nop.Core.Domain.Catalog
+@model (Product product, string financingPageUrl);
+
+<div class="ca-promo">
+    <div data-widget-type="product-widget-line-of-credit"
+         data-widget-item-sku="@Model.product.Sku"
+         data-widget-item-price="@Model.product.Price"
+         data-widget-financing-page-url="@Model.financingPageUrl">
+    </div>
+
+    <script asp-location="Footer">
+        $(document).ready(function () {
+            var ca_promo = $('.ca-promo');
+
+            if (ca_promo.length > 0) {
+                ca_promo.each(function () {
+                    $(this).prependTo($(this).parent());
+                    $(this).find('div').addClass('ca-promotional-widget');
+                });
+            }
+        });
+    </script>
+</div>
