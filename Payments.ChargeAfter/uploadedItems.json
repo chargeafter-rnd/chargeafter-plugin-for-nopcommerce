@@ -1,0 +1,30 @@
+[
+  {
+    "Type": "Plugin",
+    "SystemName": "Payments.ChargeAfter",
+    "SupportedVersion": "4.20",
+    "DirectoryPath": "ChargeAfter/nopCommerce-4.20-4.30/Payments.ChargeAfter/",
+    "SourceDirectoryPath": "ChargeAfter/nopCommerce-4.20-4.30/Nop.Plugin.Payments.ChargeAfter/"
+  },
+  {
+    "Type": "Plugin",
+    "SystemName": "Payments.ChargeAfter",
+    "SupportedVersion": "4.30",
+    "DirectoryPath": "ChargeAfter/nopCommerce-4.20-4.30/Payments.ChargeAfter/",
+    "SourceDirectoryPath": "ChargeAfter/nopCommerce-4.20-4.30/Nop.Plugin.Payments.ChargeAfter/"
+  },
+  {
+    "Type": "Plugin",
+    "SystemName": "Payments.ChargeAfter",
+    "SupportedVersion": "4.50",
+    "DirectoryPath": "ChargeAfter/nopCommerce-4.50/Payments.ChargeAfter/",
+    "SourceDirectoryPath": "ChargeAfter/nopCommerce-4.50/Nop.Plugin.Payments.ChargeAfter/"
+  },
+  {
+    "Type": "Plugin",
+    "SystemName": "Payments.ChargeAfter",
+    "SupportedVersion": "4.60",
+    "DirectoryPath": "ChargeAfter/nopCommerce-4.60/Payments.ChargeAfter/",
+    "SourceDirectoryPath": "ChargeAfter/nopCommerce-4.60/Nop.Plugin.Payments.ChargeAfter/"
+  }
+]
