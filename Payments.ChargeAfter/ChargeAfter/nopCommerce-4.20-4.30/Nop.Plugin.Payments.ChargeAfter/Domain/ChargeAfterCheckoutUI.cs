@@ -1,5 +1,4 @@
 ﻿using Nop.Core;
-using Nop.Core.Domain.Common;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Domain
 {

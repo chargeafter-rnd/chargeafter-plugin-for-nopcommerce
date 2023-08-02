@@ -31,6 +31,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
         private readonly ISettingService _settingService;
         private readonly IAddressService _addressService;
         private readonly ICountryService _countryService;
+        private readonly IOrderTaxService _orderTaxService;
         private readonly IWorkContext _workContext;
         private readonly WidgetSettings _widgetSettings;
         private readonly ServiceManager _serviceManager;
@@ -46,6 +47,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
             ISettingService settingService,
             IAddressService addressService,
             ICountryService countryService,
+            IOrderTaxService orderTaxService,
             WidgetSettings widgetSettings,
             ServiceManager serviceManager,
             IWorkContext workContext
@@ -56,6 +58,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
             _webHelper = webHelper;
             _settingService = settingService;
             _countryService = countryService;
+            _orderTaxService = orderTaxService;
             _widgetSettings = widgetSettings;
             _serviceManager = serviceManager;
             _workContext = workContext;
@@ -84,6 +87,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
 
                 result.AuthorizationTransactionId = response.ChargeId;
                 result.AuthorizationTransactionResult = response.State;
+                result.AuthorizationTransactionCode = confirmationToken.ToString();
                 result.NewPaymentStatus = PaymentStatus.Authorized;
             }
             catch (Exception ex)
@@ -94,20 +98,36 @@ namespace Nop.Plugin.Payments.ChargeAfter
             return Task.FromResult(result);
         }
 
-        public Task PostProcessPaymentAsync(PostProcessPaymentRequest postProcessPaymentRequest)
+        public async Task PostProcessPaymentAsync(PostProcessPaymentRequest postProcessPaymentRequest)
         {
-            try
+            if (!string.IsNullOrEmpty(postProcessPaymentRequest.Order.AuthorizationTransactionId))
             {
-                if(!string.IsNullOrEmpty(postProcessPaymentRequest.Order.AuthorizationTransactionId))
+                var chargeId = postProcessPaymentRequest.Order.AuthorizationTransactionId;
+                var order = postProcessPaymentRequest.Order as Order;
+
+                if (order == null)
                 {
-                    var chargeId = postProcessPaymentRequest.Order.AuthorizationTransactionId;
-                    var orderId = postProcessPaymentRequest.Order.Id;
-
-                    //_serviceManager.SetMerchantOrderId(_chargeAfterPaymentSettings, chargeId, orderId.ToString());
+                    throw new NopException("Invalid order data");
                 }
-            } catch (Exception) { }
 
-            return Task.CompletedTask;
+                // Update order id for charge
+                var (response, error) = _serviceManager.SetMerchantOrderId(_chargeAfterPaymentSettings, chargeId, order.Id.ToString());
+                if (!string.IsNullOrEmpty(error))
+                {
+                    throw new NopException(error);
+                }
+
+                // Update tax if LTO
+                var chargeTotal = response.TotalAmount;
+                if (chargeTotal > 0 && order.OrderTotal > 0 && (order.OrderTotal > chargeTotal))
+                {
+                    var orderTax = order.OrderTax;
+                    if (orderTax > 0 && (chargeTotal + order.OrderTax == order.OrderTotal))
+                    {
+                        await _orderTaxService.UpdateTaxFreeAsync(order.Id);
+                    }
+                }
+            }
         }
 
         public async Task<bool> HidePaymentMethodAsync(IList<ShoppingCartItem> cart)
@@ -187,14 +207,14 @@ namespace Nop.Plugin.Payments.ChargeAfter
             if (response.State == ChargeState.REFUNDED)
                 return Task.FromResult(new RefundPaymentResult { Errors = new[] { "Refund error occured. Charge fully refunded" } });
 
-            var amount = response.SettledAmount - response.RefundedAmount;
-            if (refundAmount > amount)
+            var availableToRefund = response.SettledAmount - response.RefundedAmount;
+            if (refundAmount > availableToRefund)
             {
-                amount = refundAmount;
+                refundAmount = availableToRefund;
             }
 
-            if (amount > 0) {
-                var (refund_response, refund_error) = _serviceManager.Refund(_chargeAfterPaymentSettings, chargeId, amount);
+            if (refundAmount > 0) {
+                var (_, refund_error) = _serviceManager.Refund(_chargeAfterPaymentSettings, chargeId, refundAmount);
                 if (!string.IsNullOrEmpty(refund_error)) { 
                     return Task.FromResult(new RefundPaymentResult { Errors = new[] { "Refund error occured" } });
                 }
