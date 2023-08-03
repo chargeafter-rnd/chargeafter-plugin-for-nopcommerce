@@ -28,6 +28,8 @@ namespace Nop.Plugin.Payments.ChargeAfter
 
         public static string UserAgent => $"nopCommerce-{NopVersion.CurrentVersion}";
 
+        public static string NonLeasableAttribute = "ChargeAfterNonLeasable";
+
         public const string PAYMENT_INFO_VIEW_COMPONENT_NAME = "ChargeAfterPaymentInfo";
 
         public const string CHECKOUT_SCRIPT_VIEW_COMPONENT_NAME = "ChargeAfterCheckoutScript";
@@ -41,5 +43,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
         public const string PROMO_SIMPLE_PRODUCT_VIEW_COMPONENT_NAME = "ChargeAfterPromoSimpleProduct";
 
         public const string ADMIN_ORDER_VIEW_COMPONENT_NAME = "ChargeAfterAdminOrder";
+
+        public const string ADMIN_PRODUCT_VIEW_COMPONENT_NAME = "ChargeAfterAdminProduct";
     }
 }

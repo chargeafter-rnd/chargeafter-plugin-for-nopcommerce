@@ -1,17 +1,14 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Nop.Plugin.Payments.ChargeAfter.Services;
 using Nop.Web.Framework.Controllers;
 using Nop.Plugin.Payments.ChargeAfter.Infrastructure;
 using Nop.Core;
 using Nop.Core.Http.Extensions;
 using Nop.Services.Orders;
 using System;
-using Nop.Services.Localization;
 using Nop.Services.Payments;
 using Nop.Services.Logging;
 using Nop.Core.Domain.Orders;
-using Nop.Services.Messages;
 using System.Linq;
 using Nop.Core.Domain.Customers;
 using Nop.Services.Common;
@@ -22,13 +19,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
     {
         #region Fields
 
-        private readonly ChargeAfterPaymentSettings _chargeAfterPaymentSettings;
-        private readonly ServiceManager _serviceManager;
         private readonly IWebHelper _webHelper;
-        private readonly IOrderService _orderService;
-        private readonly ILocalizationService _localizationService;
-        private readonly INotificationService _notificationService;
-        private readonly IOrderPaymentInfoService _orderPaymentInfoService;
         private readonly IShoppingCartService _shoppingCartService;
         private readonly IOrderProcessingService _orderProcessingService;
         private readonly IGenericAttributeService _genericAttributeService;
@@ -42,13 +33,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
         #region Ctor
 
         public PaymentChargeAfterCheckoutController(
-            ChargeAfterPaymentSettings chargeAfterPaymentSettings, 
-            ServiceManager serviceManager,
             IWebHelper webHelper,
-            IOrderService orderService,
-            ILocalizationService localizationService,
-            INotificationService notificationService,
-            IOrderPaymentInfoService orderPaymentInfoService,
             IShoppingCartService shoppingCartService,
             IOrderProcessingService orderProcessingService,
             IPaymentService paymentService,
@@ -57,13 +42,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
             IWorkContext workContext,
             ILogger logger
         ) {
-            _chargeAfterPaymentSettings = chargeAfterPaymentSettings;
-            _serviceManager = serviceManager;
             _webHelper = webHelper;
-            _orderService = orderService;
-            _localizationService = localizationService;
-            _notificationService = notificationService;
-            _orderPaymentInfoService = orderPaymentInfoService;
             _shoppingCartService = shoppingCartService;
             _orderProcessingService = orderProcessingService;
             _genericAttributeService = genericAttributeService;

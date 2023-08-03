@@ -6,7 +6,6 @@ using Nop.Plugin.Payments.ChargeAfter.Domain;
 using Nop.Plugin.Payments.ChargeAfter.Models;
 using Nop.Services.Catalog;
 using Nop.Services.Common;
-using Nop.Services.Customers;
 using Nop.Services.Directory;
 using Nop.Services.Discounts;
 using Nop.Services.Localization;
@@ -41,11 +40,12 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
         private readonly ICurrencyService _currencyService;
         private readonly IOrderTotalCalculationService _orderTotalCalculationService;
         private readonly TaxSettings _taxSettings;
-        private readonly ICustomerService _customerService;
         private readonly IDiscountService _discountService;
-        private readonly IPaymentService _paymentService;
         private readonly ITaxService _taxService;
         private readonly IGenericAttributeService _genericAttributeService;
+        private readonly INonLeasableService _nonLeasableService;
+        private readonly ICheckoutAttributeParser _checkoutAttributeParser;
+        private readonly ICheckoutAttributeService _checkoutAttributeService;
 
         #endregion
 
@@ -62,13 +62,14 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             ILocalizationService localizationService,
             ICurrencyService currencyService,
             IOrderTotalCalculationService orderTotalCalculationService,
-            ICustomerService customerService,
             IDiscountService discountService,
-            IPaymentService paymentService,
             ITaxService taxService,
             ChargeAfterPaymentSettings settings,
             TaxSettings taxSettings,
-            IGenericAttributeService genericAttributeService
+            IGenericAttributeService genericAttributeService,
+            INonLeasableService nonLeasableService,
+            ICheckoutAttributeParser checkoutAttributeParser,
+            ICheckoutAttributeService checkoutAttributeService
         )
         {
             _paymentPluginManager = paymentPluginManager;
@@ -81,13 +82,14 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             _localizationService = localizationService;
             _currencyService = currencyService;
             _orderTotalCalculationService = orderTotalCalculationService;
-            _customerService = customerService;
             _discountService = discountService;
-            _paymentService = paymentService;
             _taxService = taxService;
             _settings = settings;
             _taxSettings = taxSettings;
             _genericAttributeService = genericAttributeService;
+            _nonLeasableService = nonLeasableService;
+            _checkoutAttributeParser = checkoutAttributeParser;
+            _checkoutAttributeService = checkoutAttributeService;
         }
 
         #endregion
@@ -186,10 +188,57 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                     Name = _localizationService.GetLocalized(product, x => x.Name),
                     Quantity = sci.Quantity,
                     UnitPrice = (float)cartItemSubTotalWithDiscount/sci.Quantity,
-                    Leasable = true
+                    Leasable = _nonLeasableService.GetAttributeValue(product) == false
                 };
 
                 model.Items.Add(itemModel);
+            }
+
+            // checkout items
+            var checkoutAttributesXml = _genericAttributeService.GetAttribute<string>(
+                customer,
+                NopCustomerDefaults.CheckoutAttributes,
+                _storeContext.CurrentStore.Id
+            );
+
+            checkoutAttributesXml = _checkoutAttributeParser.EnsureOnlyActiveAttributes(checkoutAttributesXml, shoppingCartItems);
+
+            var attributes = _checkoutAttributeParser.ParseCheckoutAttributes(checkoutAttributesXml);
+            for (var i = 0; i < attributes.Count; i++)
+            {
+                var attribute = attributes[i];
+                var valuesStr = _checkoutAttributeParser.ParseValues(checkoutAttributesXml, attribute.Id);
+
+                for (var j = 0; j < valuesStr.Count; j++)
+                {
+                    var valueStr = valuesStr[j];
+
+                    if (int.TryParse(valueStr, out var attributeValueId))
+                    {
+                        var attributeValue = _checkoutAttributeService.GetCheckoutAttributeValueById(attributeValueId);
+
+                        if (attributeValue != null)
+                        {
+                            var priceAdjustmentBase = _taxService.GetCheckoutAttributePrice(attribute, attributeValue, customer);
+                            var priceAdjustment = _currencyService.ConvertFromPrimaryStoreCurrency(priceAdjustmentBase, _workContext.WorkingCurrency);
+
+                            if (priceAdjustmentBase > 0)
+                            {
+                                // checkout item
+                                var itemModel = new CheckoutModel.CheckoutItemModel
+                                {
+                                    Sku = string.Format("checkout_attr_{0}", attribute.Id),
+                                    Name = _localizationService.GetLocalized(attribute, a => a.Name),
+                                    Quantity = 1,
+                                    UnitPrice = (float)priceAdjustment,
+                                    Leasable = true
+                                };
+
+                                model.Items.Add(itemModel);
+                            }
+                        }
+                    }
+                }
             }
 
             // sub total

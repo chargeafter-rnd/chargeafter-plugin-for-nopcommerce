@@ -43,6 +43,8 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
         private readonly ITaxService _taxService;
         private readonly IGenericAttributeService _genericAttributeService;
         private readonly INonLeasableService _nonLeasableService;
+        private readonly ICheckoutAttributeParser _checkoutAttributeParser;
+        private readonly ICheckoutAttributeService _checkoutAttributeService;
 
         #endregion
 
@@ -62,7 +64,10 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             ITaxService taxService,
             ChargeAfterPaymentSettings settings,
             IGenericAttributeService genericAttributeService,
-            INonLeasableService nonLeasableService
+            IDiscountService discountService,
+            INonLeasableService nonLeasableService,
+            ICheckoutAttributeParser checkoutAttributeParser,
+            ICheckoutAttributeService checkoutAttributeService
         )
         {
             _paymentPluginManager = paymentPluginManager;
@@ -78,7 +83,10 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             _taxService = taxService;
             _settings = settings;
             _genericAttributeService = genericAttributeService;
+            _discountService = discountService;
             _nonLeasableService = nonLeasableService;
+            _checkoutAttributeParser = checkoutAttributeParser;
+            _checkoutAttributeService = checkoutAttributeService;
         }
 
         #endregion
@@ -120,7 +128,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             var shoppingCartItems = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, currentStore.Id);
             if (!shoppingCartItems.Any())
                 throw new NopException("Cart is empty. Please try again");
-            
+
             var workingCurrency = await _workContext.GetWorkingCurrencyAsync();
 
             foreach (var sci in shoppingCartItems)
@@ -155,6 +163,53 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                 };
 
                 model.Items.Add(itemModel);
+            }
+
+            // checkout items
+            var checkoutAttributesXml = await _genericAttributeService.GetAttributeAsync<string>(
+                customer,
+                NopCustomerDefaults.CheckoutAttributes,
+                currentStore.Id
+            );
+
+            checkoutAttributesXml = await _checkoutAttributeParser.EnsureOnlyActiveAttributesAsync(checkoutAttributesXml, shoppingCartItems);
+            
+            var attributes = await _checkoutAttributeParser.ParseCheckoutAttributesAsync(checkoutAttributesXml);
+            for (var i = 0; i < attributes.Count; i++)
+            {
+                var attribute = attributes[i];
+                var valuesStr = _checkoutAttributeParser.ParseValues(checkoutAttributesXml, attribute.Id);
+
+                for (var j = 0; j < valuesStr.Count; j++)
+                {
+                    var valueStr = valuesStr[j];
+
+                    if (int.TryParse(valueStr, out var attributeValueId))
+                    {
+                        var attributeValue = await _checkoutAttributeService.GetCheckoutAttributeValueByIdAsync(attributeValueId);
+
+                        if (attributeValue != null)
+                        {
+                            var priceAdjustmentBase = (await _taxService.GetCheckoutAttributePriceAsync(attribute, attributeValue, customer)).price;
+                            var priceAdjustment = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(priceAdjustmentBase, await _workContext.GetWorkingCurrencyAsync());
+                            
+                            if (priceAdjustmentBase > 0)
+                            {
+                                // checkout item
+                                var itemModel = new CheckoutModel.CheckoutItemModel
+                                {
+                                    Sku = string.Format("checkout_attr_{0}", attribute.Id),
+                                    Name = await _localizationService.GetLocalizedAsync(attribute, a => a.Name),
+                                    Quantity = 1,
+                                    UnitPrice = (float)priceAdjustment,
+                                    Leasable = true
+                                };
+
+                                model.Items.Add(itemModel);
+                            }
+                        }
+                    }
+                }
             }
 
             // sub total

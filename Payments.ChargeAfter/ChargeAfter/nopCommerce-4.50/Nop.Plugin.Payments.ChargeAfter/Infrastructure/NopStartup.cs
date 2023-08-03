@@ -22,6 +22,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Infrastructure
             services.AddScoped<IPluginService, PluginServiceOverride>();
             services.AddScoped<ICheckoutDataService, CheckoutDataService>();
             services.AddScoped<INonLeasableService, NonLeasableService>();
+            services.AddScoped<IOrderTaxService, OrderTaxService>();
 
             //override product controller in admin area
             services.AddScoped<Web.Areas.Admin.Controllers.ProductController, PaymentChargeAfterProductController>();

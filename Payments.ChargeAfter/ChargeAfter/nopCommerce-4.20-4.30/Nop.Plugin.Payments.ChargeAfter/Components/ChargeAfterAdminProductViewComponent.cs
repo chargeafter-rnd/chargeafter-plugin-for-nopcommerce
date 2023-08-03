@@ -1,37 +1,42 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
-using Nop.Services.Orders;
+using Nop.Plugin.Payments.ChargeAfter.Models;
+using Nop.Plugin.Payments.ChargeAfter.Services;
+using Nop.Services.Catalog;
 using Nop.Services.Payments;
-using Nop.Web.Areas.Admin.Models.Orders;
 using Nop.Web.Framework.Components;
 using Nop.Web.Framework.Infrastructure;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Components
 {
-    [ViewComponent(Name = Defaults.ADMIN_ORDER_VIEW_COMPONENT_NAME)]
-    public class ChargeAfterAdminOrderViewComponent : NopViewComponent
+    [ViewComponent(Name = Defaults.ADMIN_PRODUCT_VIEW_COMPONENT_NAME)]
+    public class ChargeAfterAdminProductViewComponent : NopViewComponent
     {
         #region Fields
 
+        private readonly IProductService _productService;
         private readonly IPaymentPluginManager _paymentPluginManager;
         private readonly IStoreContext _storeContext;
         private readonly IWorkContext _workContext;
-        private readonly IOrderService _orderService;
+        private readonly INonLeasableService _nonLeasableService;
 
         #endregion
 
         #region Ctor
 
-        public ChargeAfterAdminOrderViewComponent(
+        public ChargeAfterAdminProductViewComponent(
+            IProductService productService,
             IPaymentPluginManager paymentPluginManager,
             IStoreContext storeContext,
             IWorkContext workContext,
-            IOrderService orderService
-        ) {
+            INonLeasableService nonLeasableService
+        )
+        {
+            _productService = productService;
             _paymentPluginManager = paymentPluginManager;
             _storeContext = storeContext;
             _workContext = workContext;
-            _orderService = orderService;
+            _nonLeasableService = nonLeasableService;
         }
 
         #endregion
@@ -44,18 +49,20 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
                 return Content(string.Empty);
 
             //ensure that it's a proper widget zone
-            if (!widgetZone.Equals(AdminWidgetZones.OrderDetailsButtons))
+            if (!widgetZone.Equals(AdminWidgetZones.ProductDetailsBlock))
                 return Content(string.Empty);
 
-            var orderId = additionalData is OrderModel model ? model.Id : 0;
-            if (orderId == 0)
+            if (!(additionalData is Web.Areas.Admin.Models.Catalog.ProductModel productModel)) 
                 return Content(string.Empty);
 
-            var order = _orderService.GetOrderById(orderId);
-            if (order == null || order.PaymentMethodSystemName == null || !order.PaymentMethodSystemName.Equals(Defaults.SystemName))
-                return Content(string.Empty);
+            var model = new NonLeasableProductModel { ProductId = productModel.Id };
+            if (model.ProductId > 0)
+            {
+                var product = _productService.GetProductById(model.ProductId);
+                model.CaNonLeasable = _nonLeasableService.GetAttributeValue(product);
+            }
 
-            return View("~/Plugins/Payments.ChargeAfter/Areas/Admin/Views/Order.cshtml");
+            return View("~/Plugins/Payments.ChargeAfter/Areas/Admin/Views/Product.cshtml", model);
         }
 
         #endregion
