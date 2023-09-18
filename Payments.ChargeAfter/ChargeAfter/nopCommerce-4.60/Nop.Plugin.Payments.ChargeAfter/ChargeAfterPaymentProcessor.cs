@@ -32,6 +32,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
         private readonly IAddressService _addressService;
         private readonly ICountryService _countryService;
         private readonly IOrderTaxService _orderTaxService;
+        private readonly IOrderSaleService _orderSaleService;
         private readonly IWorkContext _workContext;
         private readonly WidgetSettings _widgetSettings;
         private readonly ServiceManager _serviceManager;
@@ -48,6 +49,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
             IAddressService addressService,
             ICountryService countryService,
             IOrderTaxService orderTaxService,
+            IOrderSaleService orderSaleService,
             WidgetSettings widgetSettings,
             ServiceManager serviceManager,
             IWorkContext workContext
@@ -59,6 +61,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
             _settingService = settingService;
             _countryService = countryService;
             _orderTaxService = orderTaxService;
+            _orderSaleService = orderSaleService;
             _widgetSettings = widgetSettings;
             _serviceManager = serviceManager;
             _workContext = workContext;
@@ -126,6 +129,12 @@ namespace Nop.Plugin.Payments.ChargeAfter
                     {
                         await _orderTaxService.UpdateTaxFreeAsync(order.Id);
                     }
+                }
+
+                // Auto capture
+                if (_chargeAfterPaymentSettings.UseAutoCapture)
+                {
+                    await _orderSaleService.CaptureAsync(order.Id);
                 }
             }
         }
@@ -325,6 +334,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
                 ["Plugins.Payment.ChargeAfter.PaymentMethod.Tip"] = "You will be redirected to complete the order.",
 
                 ["Plugins.Payments.ChargeAfter.Header.Payment"] = "Payment",
+                ["Plugins.Payments.ChargeAfter.Header.Checkout"] = "Checkout",
                 ["Plugins.Payments.ChargeAfter.Header.PromoLineOfCredit"] = "Promo: Line of Credit",
                 ["Plugins.Payments.ChargeAfter.Header.PromoSimple"] = "Promo: Simple Widgets",
                 
@@ -350,10 +360,18 @@ namespace Nop.Plugin.Payments.ChargeAfter
                 ["Plugins.Payments.ChargeAfter.Fields.AdditionalFeePercentage"] = "Additional fee. Use percentage",
                 ["Plugins.Payments.ChargeAfter.Fields.AdditionalFeePercentage.Hint"] = "Determines whether to apply a percentage additional fee to the order total. If not enabled, a fixed value is used.",
 
+                ["Plugins.Payments.ChargeAfter.Fields.TypeTransaction"] = "Transaction Type",
+                ["Plugins.Payments.ChargeAfter.Fields.TypeTransaction.Hint"] = "Set to capture enabling auto capture at the end of checkout experience",
+
+                ["Plugins.Payments.ChargeAfter.Fields.TypeCheckoutBrand"] = "Checkout Brand Type",
+                ["Plugins.Payments.ChargeAfter.Fields.TypeCheckoutBrand.Hint"] = "Type attribute for checkout branding according the space available to you",
+
                 ["Plugins.Payments.ChargeAfter.Fields.EnableLineOfCreditPromo"] = "Enable promotional widget",
                 ["Plugins.Payments.ChargeAfter.Fields.EnableLineOfCreditPromo.Hint"] = "This widget will display the offer with the lowest interest rate that a consumer can get.",
+                ["Plugins.Payments.ChargeAfter.Fields.TypeLineOfCreditPromo"] = "Promotional widget Type",
+                ["Plugins.Payments.ChargeAfter.Fields.TypeLineOfCreditPromo.Hint"] = "You can choose one of widget types to display the financial offer available.",
                 ["Plugins.Payments.ChargeAfter.Fields.FinancingPageUrlLineOfCreditPromo"] = "Financing page Url",
-                ["Plugins.Payments.ChargeAfter.Fields.FinancingPageUrlLineOfCreditPromo.Hint"] = "The financing page URL is used to notify the user of more detailed funding information. Link can be absolute or relative.",
+                ["Plugins.Payments.ChargeAfter.Fields.FinancingPageUrlLineOfCreditPromo.Hint"] = "The financing page URL is used to notify the user of more detailed funding information. Link must be absolute.",
                 ["Plugins.Payments.ChargeAfter.Fields.FinancingPageUrlLineOfCreditPromo.Required"] = "The financing page URL is required.",
 
                 ["Plugins.Payments.ChargeAfter.Fields.EnableSimplePromoBeforeContent"] = "Enable promotional widget before content",

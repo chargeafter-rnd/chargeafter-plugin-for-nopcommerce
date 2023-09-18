@@ -5,7 +5,6 @@ using Nop.Plugin.Payments.ChargeAfter.Core.Http;
 using Nop.Plugin.Payments.ChargeAfter.Charges;
 using Nop.Plugin.Payments.ChargeAfter.Payments;
 using System;
-using Nop.Plugin.Payments.ChargeAfter.Sessions;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Services
 {
@@ -78,43 +77,6 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             });
         }
 
-        public (Session Session, string ErrorMessage) CreateSession(ChargeAfterPaymentSettings chargeAfterPaymentSettings)
-        {
-            return HandleFunction(chargeAfterPaymentSettings, () =>
-            {
-                var sessionRequest = new CreateSessionRequest();
-                var requestInfo = new SessionRequestInfo();
-
-                requestInfo.FlowType = "Apply";
-                requestInfo.Channel = "e_commerce";
-                requestInfo.Source = "Api";
-
-                sessionRequest.RequestInfo = requestInfo;
-
-                var request = new SessionCreateRequest().RequestBody(sessionRequest);
-                return HandleCheckoutRequest<SessionCreateRequest, Session>(chargeAfterPaymentSettings, request, true);
-
-            });
-        }
-
-        public (SessionMerchantId SessionMerchantId, string ErrorMessage) GetMerchantInfoBySessionId(ChargeAfterPaymentSettings chargeAfterPaymentSettings, string sessionId)
-        {
-            return HandleFunction(chargeAfterPaymentSettings, () =>
-            {
-                var request = new SessionGetMerchantIdRequest(sessionId);
-                return HandleCheckoutRequest<SessionGetMerchantIdRequest, SessionMerchantId>(chargeAfterPaymentSettings, request, true);
-            });
-        }
-
-        public (SessionMerchantSettings SessionMerchantSettings, string ErrorMessage) GetMerchantSettingsById(ChargeAfterPaymentSettings chargeAfterPaymentSettings, string merchantId)
-        {
-            return HandleFunction(chargeAfterPaymentSettings, () =>
-            {
-                var request = new SessionGetMerchantSettingRequest(merchantId);
-                return HandleCheckoutRequest<SessionGetMerchantSettingRequest, SessionMerchantSettings>(chargeAfterPaymentSettings, request, true, true);
-            });
-        }
-
         private (TResult Result, string ErrorMessage) HandleFunction<TResult>(ChargeAfterPaymentSettings chargeAfterPaymentSettings, Func<TResult> function)
         {
             try
@@ -132,7 +94,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             }
         }
 
-        private TResult HandleCheckoutRequest<TRequest, TResult>(ChargeAfterPaymentSettings settings, TRequest request, bool isExternal = false, bool isCdn = false)
+        private TResult HandleCheckoutRequest<TRequest, TResult>(ChargeAfterPaymentSettings settings, TRequest request, bool isExternal = false)
             where TRequest : HttpRequest where TResult : class
         {
             //prepare common request params
@@ -148,9 +110,6 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             var environment = settings.UseProduction 
                 ? new LiveEnvironment(clientPublic, clientPrivate, isExternal) as ChargeAfterEnvironment 
                 : new SandboxEnvironment(clientPublic, clientPrivate, isExternal) as ChargeAfterEnvironment;
-
-            if (isCdn)
-                environment = new CdnEnvironment(clientPublic, useProduction: settings.UseProduction) as ChargeAfterEnvironment;
 
             var client = new ChargeAfterHttpClient(environment);
             var response = client.Execute(request)

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
+using Nop.Plugin.Payments.ChargeAfter.Domain;
 using Nop.Services.Catalog;
 using Nop.Services.Cms;
 using Nop.Web.Framework.Components;
@@ -66,7 +67,9 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
             if (string.IsNullOrEmpty(financingPageUrl))
                 financingPageUrl = "/";
 
-            return View("~/Plugins/Payments.ChargeAfter/Views/Promo/PromoLineOfCredit.cshtml", (product, financingPageUrl));
+            var promoType = _settings.TypeLineOfCreditPromo.ToKebabCaseString();
+
+            return View("~/Plugins/Payments.ChargeAfter/Views/Promo/PromoLineOfCredit.cshtml", (product, financingPageUrl, promoType));
         }
 
         #endregion

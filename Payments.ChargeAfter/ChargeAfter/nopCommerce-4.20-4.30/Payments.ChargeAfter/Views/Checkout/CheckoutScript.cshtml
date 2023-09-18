@@ -1,17 +1,4 @@
 ﻿<script type="text/javascript">
-    var caConfig = {
-        apiKey: '@(Model.CaPublicKey)'
-    };
-
-    !function (e, t, c, a, n) {
-        var r, o = t.getElementsByTagName(c)[0];
-        e.ChargeAfter || (e.ChargeAfter = {}),
-        t.getElementById(a) || (e.ChargeAfter.cfg = n, (r = t.createElement(c)).id = a,
-        r.src = "https://cdn@(Model.CaHost)/web/v2/chargeafter.min.js?t=" + 1 * new Date,
-        r.async = !0, o.parentNode.insertBefore(r, o))
-    }
-    (window, document, "script", "chargeafter-checkout-finance", caConfig);
-    
     var startCheckout = function () {
         let caData = {
             consumerDetails: {
@@ -77,6 +64,10 @@
     }
 
     function createForm(id, action, ca_token) {
+        if (window.caloader) {
+            window.caloader.activate();
+        }
+
         $.post(action, { ca_token: ca_token })
             .done(function (response) {
                 console.log(response);
@@ -90,6 +81,11 @@
             })
             .fail(function () {
                 returnError("Fatal error");
+            })
+            .always(function () {
+                if (window.caloader) {
+                    window.caloader.deactivate();
+                }
             });
     }
     

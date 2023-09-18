@@ -24,34 +24,28 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
     {
         #region Fields
 
-        private readonly ILanguageService _languageService;
         private readonly ILocalizationService _localizationService;
         private readonly INotificationService _notificationService;
         private readonly IPermissionService _permissionService;
         private readonly ISettingService _settingService;
         private readonly IStoreContext _storeContext;
-        private readonly ServiceManager _serviceManager;
-
+        
         #endregion
 
         #region Ctor
 
         public PaymentChargeAfterController(
-            ILanguageService languageService,
             ILocalizationService localizationService,
             INotificationService notificationService,
             IPermissionService permissionService,
             ISettingService settingService,
-            IStoreContext storeContext,
-            ServiceManager serviceManager
+            IStoreContext storeContext
         ) {
-            _languageService = languageService;
             _localizationService = localizationService;
             _notificationService = notificationService;
             _permissionService = permissionService;
             _settingService = settingService;
             _storeContext = storeContext;
-            _serviceManager = serviceManager;
         }
 
         #endregion
@@ -80,7 +74,15 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                 AdditionalFee = chargeAfterPaymentSettings.AdditionalFee,
                 AdditionalFeePercentage = chargeAfterPaymentSettings.AdditionalFeePercentage,
 
+                TypeTransaction = (int)chargeAfterPaymentSettings.TypeTransaction,
+                TypeTransactionValues = chargeAfterPaymentSettings.TypeTransaction.ToSelectList(),
+
+                TypeCheckoutBrand = (int)chargeAfterPaymentSettings.TypeCheckoutBrand,
+                TypeCheckoutBrandValues = chargeAfterPaymentSettings.TypeCheckoutBrand.ToSelectList(),
+
                 EnableLineOfCreditPromo = chargeAfterPaymentSettings.EnableLineOfCreditPromo,
+                TypeLineOfCreditPromo = (int)chargeAfterPaymentSettings.TypeLineOfCreditPromo,
+                TypeLineOfCreditPromoValues = chargeAfterPaymentSettings.TypeLineOfCreditPromo.ToSelectList(),
                 FinancingPageUrlLineOfCreditPromo = chargeAfterPaymentSettings.FinancingPageUrlLineOfCreditPromo,
 
                 EnableSimplePromoBeforeContent = chargeAfterPaymentSettings.EnableSimplePromoBeforeContent,
@@ -103,6 +105,8 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                 WidgetTypeSimplePromoProductAfterDescId = Convert.ToInt32(chargeAfterPaymentSettings.WidgetTypeSimplePromoProductAfterDesc),
                 WidgetTypeSimplePromoProductAfterDescValues = chargeAfterPaymentSettings.WidgetTypeSimplePromoProductAfterDesc.ToSelectList(),
 
+                EnableAdvancedSetting = chargeAfterPaymentSettings.EnableAdvancedSetting,
+
                 ActiveStoreScopeConfiguration = storeScope
             };
 
@@ -115,11 +119,16 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                 
                 model.SandboxPublicKey_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.SandboxPublicKey, storeScope);
                 model.SandboxPrivateKey_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.SandboxPrivateKey, storeScope);
-                
+
+                model.TypeCheckoutBrand_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.TypeCheckoutBrand, storeScope);
+
                 model.AdditionalFee_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.AdditionalFee, storeScope);
                 model.AdditionalFeePercentage_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.AdditionalFeePercentage, storeScope);
-                
+
+                model.TypeTransaction_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.TypeTransaction, storeScope);
+
                 model.EnableLineOfCreditPromo_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.EnableLineOfCreditPromo, storeScope);
+                model.TypeLineOfCreditPromo_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.TypeLineOfCreditPromo, storeScope);
                 model.FinancingPageUrlLineOfCreditPromo_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.FinancingPageUrlLineOfCreditPromo, storeScope);
 
                 model.EnableSimplePromoBeforeContent_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.EnableSimplePromoBeforeContent, storeScope);
@@ -139,7 +148,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
             }
 
             // ReSharper disable once Mvc.ViewNotResolved
-            return View("~/Plugins/Payments.ChargeAfter/Views/Configuration/Configure.cshtml", model);
+            return View("~/Plugins/Payments.ChargeAfter/Areas/Admin/Views/Configure.cshtml", model);
         }
 
         [HttpPost]
@@ -167,7 +176,12 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
             chargeAfterPaymentSettings.AdditionalFee = 0;
             chargeAfterPaymentSettings.AdditionalFeePercentage = false;
 
+            chargeAfterPaymentSettings.TypeTransaction = (Domain.TransactionType)model.TypeTransaction;
+
+            chargeAfterPaymentSettings.TypeCheckoutBrand = (Domain.Promo.CheckoutBrandType)model.TypeCheckoutBrand;
+
             chargeAfterPaymentSettings.EnableLineOfCreditPromo = model.EnableLineOfCreditPromo;
+            chargeAfterPaymentSettings.TypeLineOfCreditPromo = (Domain.Promo.LineOfCreditType)model.TypeLineOfCreditPromo;
             chargeAfterPaymentSettings.FinancingPageUrlLineOfCreditPromo = model.FinancingPageUrlLineOfCreditPromo;
 
             chargeAfterPaymentSettings.EnableSimplePromoBeforeContent = model.EnableSimplePromoBeforeContent;
@@ -185,8 +199,6 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
             chargeAfterPaymentSettings.EnableSimplePromoProductAfterDesc = model.EnableSimplePromoProductAfterDesc;
             chargeAfterPaymentSettings.WidgetTypeSimplePromoProductAfterDesc = (PromoWidgetType)model.WidgetTypeSimplePromoProductAfterDescId;
 
-            chargeAfterPaymentSettings.BrandId = GetBrandId(chargeAfterPaymentSettings);
-
             /* We do not clear cache after each setting update.
              * This behavior can increase performance because cached settings will not be cleared 
              * and loaded from database after each update */
@@ -201,9 +213,12 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
             _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.AdditionalFee, model.AdditionalFee_OverrideForStore, storeScope, false);
             _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.AdditionalFeePercentage, model.AdditionalFeePercentage_OverrideForStore, storeScope, false);
 
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.BrandId, model.BrandId_OverrideForStore, storeScope, false);
+            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.TypeTransaction, model.TypeTransaction_OverrideForStore, storeScope, false);
+
+            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.TypeCheckoutBrand, model.TypeCheckoutBrand_OverrideForStore, storeScope, false);
 
             _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.EnableLineOfCreditPromo, model.EnableLineOfCreditPromo_OverrideForStore, storeScope, false);
+            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.TypeLineOfCreditPromo, model.TypeLineOfCreditPromo_OverrideForStore, storeScope, false);
             _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.FinancingPageUrlLineOfCreditPromo, model.FinancingPageUrlLineOfCreditPromo_OverrideForStore, storeScope, false);
 
             _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.EnableSimplePromoBeforeContent, model.EnableSimplePromoBeforeContent_OverrideForStore, storeScope, false);
@@ -230,36 +245,28 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
             return Configure();
         }
 
-
-        public string GetBrandId(ChargeAfterPaymentSettings chargeAfterPaymentSettings, string defaultBrandId = "")
+        [HttpPost]
+        public IActionResult SavePreferenceMode(bool value)
         {
-            var sessionKey = ChargeAfterHelper.GetPublicKeyFromSettings(chargeAfterPaymentSettings);
-            if (string.IsNullOrEmpty(sessionKey))
-                return defaultBrandId;
+            if (!_permissionService.Authorize(StandardPermissionProvider.ManagePaymentMethods))
+                return AccessDeniedView();
 
-            var merchantId = HttpContext.Session.Get<string>(sessionKey);
+            //load settings for a chosen store scope
+            var storeScope = _storeContext.ActiveStoreScopeConfiguration;
+            var chargeAfterPaymentSettings = _settingService.LoadSetting<ChargeAfterPaymentSettings>(storeScope);
 
-            if(string.IsNullOrEmpty(merchantId)) { 
-                var (session, error_session) = _serviceManager.CreateSession(chargeAfterPaymentSettings);
-                if (!string.IsNullOrEmpty(error_session) || string.IsNullOrEmpty(session.SessionId))
-                    return defaultBrandId;
+            //save settings
+            chargeAfterPaymentSettings.EnableAdvancedSetting = value;
 
-                var sessionId = session.SessionId;
-            
-                var (merchant, error_merchant) = _serviceManager.GetMerchantInfoBySessionId(chargeAfterPaymentSettings, sessionId);
-                if (!string.IsNullOrEmpty(error_merchant) || merchant == null || merchant.Data.MerchantId == null)
-                    return defaultBrandId;
+            /* We do not clear cache after each setting update.
+             * This behavior can increase performance because cached settings will not be cleared 
+             * and loaded from database after each update */
+            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.EnableAdvancedSetting, value, storeScope, false);
 
-                merchantId = merchant.Data.MerchantId;
+            //now clear settings cache
+            _settingService.ClearCache();
 
-                HttpContext.Session.Set<string>(sessionKey, merchantId);
-            }
-
-            var (merchantSettings, error_settings) = _serviceManager.GetMerchantSettingsById(chargeAfterPaymentSettings, merchantId);
-            if (!string.IsNullOrEmpty(error_settings) || string.IsNullOrEmpty(merchantSettings.BrandId))
-                return defaultBrandId;
-
-            return merchantSettings.BrandId.ToLower();
+            return Json(new { Result = true });
         }
 
         #endregion

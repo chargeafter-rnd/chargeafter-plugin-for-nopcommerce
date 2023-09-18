@@ -1,14 +1,75 @@
-﻿<script type="text/javascript">
-    var caConfig = {
-        apiKey: '@(Model.CaPublicKey)'
-    };
+﻿@model (string caPublicKey, string caHost, string checkoutPromoType);
 
-    !function (e, t, c, a, n) {
-        var r, o = t.getElementsByTagName(c)[0];
-        e.ChargeAfter || (e.ChargeAfter = {}),
-        t.getElementById(a) || (e.ChargeAfter.cfg = n, (r = t.createElement(c)).id = a,
-        r.src = "https://cdn@(Model.CaHost)/promotional-widget/v2/widget.min.js?t=" + 1 * new Date,
-        r.async = !0, o.parentNode.insertBefore(r, o))
+<script type="text/javascript">
+    function onLoadChargeAfterSDKScript() {
+        var config = {
+            apiKey: '@(Model.caPublicKey)'
+        };
+
+        ChargeAfter.init(config);
     }
-    (window, document, "script", "chargeafter-promotional-widget", caConfig);
+
+    var script = document.createElement('script');
+    script.src = 'https://cdn@(Model.caHost)/web/v2/chargeafter.min.js?t=' + Date.now();
+    script.type = 'text/javascript';
+    script.async = true;
+    script.onload = onLoadChargeAfterSDKScript;
+    document.body.appendChild(script);
+
+    function getCheckoutLogoElement() {
+        const filter = Array.prototype.filter;
+        const elements = document.querySelectorAll('img[src]');
+        const regex = /(Plugins)\/(Payments\.ChargeAfter)/gm;
+
+        const filtered = filter.call(elements, function (node) {
+            return node.getAttribute('src').match(regex);
+        });
+
+        return filtered ? filtered[0] : null;
+    }
+
+    function initCheckoutCABrand() {
+        const paymentMethodCurrentLogo = getCheckoutLogoElement();
+
+        if (paymentMethodCurrentLogo && ChargeAfter?.promotions?.update) {
+            const promoBlockWrap = document.createElement('div');
+            const promoBlock = document.createElement('div');
+
+            promoBlockWrap.style.minHeight = '24px';
+            promoBlockWrap.style.maxWidth = '100%';
+
+            promoBlock.classList.add('ca-checkout-button');
+            promoBlock.setAttribute('data-button-type', '@(Model.checkoutPromoType)');
+
+            promoBlockWrap.append(promoBlock);
+            paymentMethodCurrentLogo.replaceWith(promoBlockWrap);
+
+            // Update promotions
+            ChargeAfter.promotions.update();
+        }
+    }
+
+    function checkPagePayment() {
+        const hash = window.location.hash.replace('#', '');
+        const path = window.location.pathname;
+
+        if (hash === 'opc-payment_method' || path === '/checkout/paymentmethod') {
+            initCheckoutCABrand();
+        }
+    }
+
+    ['load', 'hashchange'].forEach(function (e) {
+        window.addEventListener(e, checkPagePayment, false);
+    });
 </script>
+
+<style>
+    .ca-checkout-button img {
+        width: 100%;
+        height: auto;
+    }
+
+    .ca-checkout-button [class*="ca-promotional-css-"] {
+        max-width: 100%;
+    }
+</style>

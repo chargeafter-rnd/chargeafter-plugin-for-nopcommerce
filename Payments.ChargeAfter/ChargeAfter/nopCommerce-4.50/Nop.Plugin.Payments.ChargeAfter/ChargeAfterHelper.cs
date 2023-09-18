@@ -56,30 +56,6 @@ namespace Nop.Plugin.Payments.ChargeAfter
             return type;
         }
 
-        public static string GetBrandUrlFromSettings(ChargeAfterPaymentSettings chargeAfterPaymentSettings)
-        {
-            if(string.IsNullOrEmpty(chargeAfterPaymentSettings.BrandId)) {
-                return string.Empty;
-            }
-
-            return GetBrandUrlFromCdn(chargeAfterPaymentSettings.UseProduction, chargeAfterPaymentSettings.BrandId);
-        }
-
-        public static string GetCdnUrl(bool useProduction)
-        {
-            return useProduction ? "https://storage.googleapis.com/cdn-production-bucket/" : "https://cdn-sandbox.ca-dev.co/";
-        }
-
-        public static string GetBrandUrlFromCdn(bool useProduction, string brandId)
-        {
-            return string.Concat(GetCdnUrl(useProduction), "assets/brands/", brandId, "/button.svg");
-        }
-
-        public static string GetSettingsUrlByMerchantFromCdn(bool useProduction, string merchantId)
-        {
-            return string.Concat(GetCdnUrl(useProduction), "assets/merchants/", merchantId, "/settings.json");
-        }
-
         #endregion
     }
 }

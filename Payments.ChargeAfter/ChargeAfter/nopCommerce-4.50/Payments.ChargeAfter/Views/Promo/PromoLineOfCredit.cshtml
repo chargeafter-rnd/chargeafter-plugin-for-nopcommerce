@@ -1,8 +1,8 @@
 ﻿@using Nop.Core.Domain.Catalog
-@model (Product product, string financingPageUrl);
+@model (Product product, string financingPageUrl, string promoType);
 
 <div class="ca-promo">
-    <div data-widget-type="product-widget-line-of-credit"
+    <div data-widget-type="@Model.promoType"
          data-widget-item-sku="@Model.product.Sku"
          data-widget-item-price="@Model.product.Price"
          data-widget-financing-page-url="@Model.financingPageUrl">

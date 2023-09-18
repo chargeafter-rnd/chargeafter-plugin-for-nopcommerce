@@ -3,6 +3,7 @@
 @{
     Layout = "";
 }
+
 <div id="chargeafter-payment" style="display: none"></div>
 <table width="100%" cellpadding="0" cellspacing="0">
     <tr>
@@ -14,3 +15,6 @@
     @await Component.InvokeAsync(typeof(ChargeAfterCheckoutScriptViewComponent))
 </table>
 <div id="chargeafter-payment-error" role="alert" style="color:red"></div>
+
+<!link rel="stylesheet" href="/Plugins/Payments.ChargeAfter/Content/chargeafterloader.css" />
+<!script src="/Plugins/Payments.ChargeAfter/Content/chargeafterloader.js"></!script>

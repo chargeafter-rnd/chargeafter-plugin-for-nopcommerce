@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
-using Nop.Plugin.Payments.ChargeAfter.Models;
+using Nop.Plugin.Payments.ChargeAfter.Domain;
 using Nop.Services.Cms;
 using Nop.Web.Framework.Components;
 using Nop.Web.Framework.Infrastructure;
@@ -51,13 +51,9 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
                 return Content(string.Empty);
 
             var caHost = ChargeAfterHelper.GetCaHostByUseProduction(_settings.UseProduction);
-            var model = new CheckoutModel
-            {
-                CaPublicKey = caPublicKey,
-                CaHost = caHost
-            };
+            var checkoutPromoType = _settings.TypeCheckoutBrand.ToKebabCaseString();
 
-            return View("~/Plugins/Payments.ChargeAfter/Views/Promo/PromoScript.cshtml", model);
+            return View("~/Plugins/Payments.ChargeAfter/Views/Promo/PromoScript.cshtml", (caPublicKey, caHost, checkoutPromoType));
         }
 
         #endregion
