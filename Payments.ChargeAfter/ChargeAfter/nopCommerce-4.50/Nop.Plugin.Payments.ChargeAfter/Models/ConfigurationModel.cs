@@ -39,13 +39,24 @@ namespace Nop.Plugin.Payments.ChargeAfter.Models
         public bool AdditionalFeePercentage { get; set; }
         public bool AdditionalFeePercentage_OverrideForStore { get; set; }
 
-        [NopResourceDisplayName("Plugins.Payments.ChargeAfter.Fields.BrandId")]
-        public string BrandId { get; set; }
-        public bool BrandId_OverrideForStore { get; set; }
+        [NopResourceDisplayName("Plugins.Payments.ChargeAfter.Fields.TypeTransaction")]
+        public int TypeTransaction { get; set; }
+        public bool TypeTransaction_OverrideForStore { get; set; }
+        public SelectList TypeTransactionValues { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.ChargeAfter.Fields.TypeCheckoutBrand")]
+        public int TypeCheckoutBrand { get; set; }
+        public bool TypeCheckoutBrand_OverrideForStore { get; set; }
+        public SelectList TypeCheckoutBrandValues { get; set; }
 
         [NopResourceDisplayName("Plugins.Payments.ChargeAfter.Fields.EnableLineOfCreditPromo")]
         public bool EnableLineOfCreditPromo { get; set; }
         public bool EnableLineOfCreditPromo_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.ChargeAfter.Fields.TypeLineOfCreditPromo")]
+        public int TypeLineOfCreditPromo { get; set; }
+        public bool TypeLineOfCreditPromo_OverrideForStore { get; set; }
+        public SelectList TypeLineOfCreditPromoValues { get; set; }
 
         [NopResourceDisplayName("Plugins.Payments.ChargeAfter.Fields.FinancingPageUrlLineOfCreditPromo")]
         public string FinancingPageUrlLineOfCreditPromo { get; set; }
@@ -95,5 +106,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Models
         [NopResourceDisplayName("Plugins.Payments.ChargeAfter.Fields.WidgetTypeSimplePromoProductAfterDesc")]
         public SelectList WidgetTypeSimplePromoProductAfterDescValues { get; set; }
         public bool WidgetTypeSimplePromoProductAfterDescId_OverrideForStore { get; set; }
+
+        public bool EnableAdvancedSetting { get; set; }
     }
 }

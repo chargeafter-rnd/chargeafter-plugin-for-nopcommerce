@@ -15,13 +15,17 @@
         the dlls copied from the NuGet cache to the output of your project-->
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
+    <ItemGroup>
+      <Compile Remove="Views\Configuration\**" />
+      <EmbeddedResource Remove="Views\Configuration\**" />
+      <None Remove="Views\Configuration\**" />
+    </ItemGroup>
 
     <ItemGroup>
         <None Remove="logo.png" />
         <None Remove="plugin.json" />
 
         <None Remove="Views\_ViewImports.cshtml" />
-        <None Remove="Views\Configuration\Configure.cshtml" />
         <None Remove="Views\Promo\PromoLineOfCredit.cshtml" />
         <None Remove="Views\Promo\PromoScript.cshtml" />
         <None Remove="Views\Promo\PromoSimple.cshtml" />
@@ -31,6 +35,10 @@
         <None Remove="Areas\Admin\Views\_ViewImports.cshtml" />
         <None Remove="Areas\Admin\Views\Order.cshtml" />
         <None Remove="Areas\Admin\Views\Product.cshtml" />
+		<None Remove="Areas\Admin\Views\Configure.cshtml" />
+
+		<None Remove="Content\chargeafterloader.css" />
+		<None Remove="Content\chargeafterloader.js" />
     </ItemGroup>
 
 	<ItemGroup>
@@ -49,9 +57,6 @@
     </ItemGroup>
 
 	<ItemGroup>
-		<Content Include="Views\Configuration\Configure.cshtml">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
 		<Content Include="Views\Promo\PromoLineOfCredit.cshtml">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
@@ -80,6 +85,18 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 		<Content Include="Areas\Admin\Views\Product.cshtml">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Areas\Admin\Views\Configure.cshtml">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="Content\chargeafterloader.css">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Content\chargeafterloader.js">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 	</ItemGroup>

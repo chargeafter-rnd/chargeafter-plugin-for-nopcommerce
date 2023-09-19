@@ -18,6 +18,8 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
 {
     public class PaymentChargeAfterCheckoutController : BasePaymentController
     {
+        private const string ProcessPaymentRequestKey = "OrderPaymentInfo";
+
         #region Fields
 
         private readonly IWebHelper _webHelper;
@@ -79,7 +81,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                     throw new NopException("Your cart is empty");
                 }
 
-                var processPaymentRequest = HttpContext.Session.Get<ProcessPaymentRequest>("OrderPaymentInfo");
+                var processPaymentRequest = HttpContext.Session.Get<ProcessPaymentRequest>(ProcessPaymentRequestKey);
                 if (processPaymentRequest == null)
                 {
                     processPaymentRequest = new ProcessPaymentRequest();
@@ -121,6 +123,9 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                 {
                     await _logger.ErrorAsync("ChargeAfter Order Place Error", new NopException(error));
                 }
+
+                // Clear process payment request data
+                HttpContext.Session.Remove(ProcessPaymentRequestKey);
 
                 throw new NopException("Payment Error. Please try again");
             } catch(Exception e) {

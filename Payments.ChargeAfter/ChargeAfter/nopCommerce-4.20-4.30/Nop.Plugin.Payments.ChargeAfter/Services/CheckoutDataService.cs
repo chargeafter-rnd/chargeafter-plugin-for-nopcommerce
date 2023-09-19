@@ -98,12 +98,16 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
 
         public CheckoutModel GetCheckoutData()
         {
-            if (!_paymentPluginManager.IsPluginActive(Defaults.SystemName, _workContext.CurrentCustomer, _storeContext.CurrentStore.Id))
+            var customer = _workContext.CurrentCustomer;
+
+            if (!_paymentPluginManager.IsPluginActive(Defaults.SystemName, customer, _storeContext.CurrentStore.Id))
                 throw new NopException("Unauthorized action");
 
-            var customer = _workContext.CurrentCustomer;
-            var paymentMethodSystemName = _genericAttributeService.GetAttribute<string>(customer,
-                    NopCustomerDefaults.SelectedPaymentMethodAttribute, _storeContext.CurrentStore.Id);
+            var paymentMethodSystemName = _genericAttributeService.GetAttribute<string>(
+                customer,
+                NopCustomerDefaults.SelectedPaymentMethodAttribute, 
+                _storeContext.CurrentStore.Id
+            );
 
             if (!paymentMethodSystemName.Equals(Defaults.SystemName))
                 throw new NopException("Unauthorized action");
@@ -149,13 +153,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                 ShippingAddressState = shippingAddressState.Abbreviation,
             };
 
-            var model = new CheckoutModel
-            {
-                ChargeAfterCheckoutUI = checkoutUiData,
-                CaPublicKey = caPublicKey,
-                CaHost = caHost,
-                AddressMismatch = CheckAddressMismatch(checkoutUiData),
-            };
+            var model = new CheckoutModel { ChargeAfterCheckoutUI = checkoutUiData };
             
             // items
             var shoppingCartItems = _shoppingCartService.GetShoppingCart(customer, ShoppingCartType.ShoppingCart, _storeContext.CurrentStore.Id);
@@ -305,27 +303,6 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             }
 
             return model;
-        }
-
-        #endregion
-
-        #region Utilities
-
-        private static bool CheckAddressMismatch(ChargeAfterCheckoutUI checkoutUiData)
-        {
-            if (!checkoutUiData.BillingAddressLine1.Equals(checkoutUiData.ShippingAddressLine1) ||
-                (!string.IsNullOrEmpty(checkoutUiData.BillingAddressLine2) &&
-                 !string.IsNullOrEmpty(checkoutUiData.ShippingAddressLine2) &&
-                 !checkoutUiData.BillingAddressLine2.Equals(checkoutUiData.ShippingAddressLine2)
-                ) ||
-                !checkoutUiData.BillingAddressCity.Equals(checkoutUiData.ShippingAddressCity) ||
-                !checkoutUiData.BillingAddressZipCode.Equals(checkoutUiData.ShippingAddressZipCode) ||
-                !checkoutUiData.BillingAddressState.Equals(checkoutUiData.ShippingAddressState)
-            ) {
-                return true;
-            }
-
-            return false;
         }
 
         #endregion

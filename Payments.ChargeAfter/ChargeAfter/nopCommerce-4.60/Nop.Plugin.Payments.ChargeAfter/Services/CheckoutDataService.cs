@@ -114,15 +114,8 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             if (string.IsNullOrEmpty(caPublicKey))
                 throw new NopException("Incorrect credentials");
 
-            var caHost = ChargeAfterHelper.GetCaHostByUseProduction(_settings.UseProduction);
             var checkoutUiData = await GetCheckoutUiDataAsync(customer);
-
-            var model = new CheckoutModel
-            {
-                ChargeAfterCheckoutUI = checkoutUiData,
-                CaPublicKey = caPublicKey,
-                CaHost = caHost
-            };
+            var model = new CheckoutModel { ChargeAfterCheckoutUI = checkoutUiData };
             
             // items
             var shoppingCartItems = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, currentStore.Id);

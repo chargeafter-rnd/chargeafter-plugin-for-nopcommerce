@@ -1,5 +1,6 @@
 ﻿using Nop.Core.Configuration;
 using Nop.Plugin.Payments.ChargeAfter.Domain;
+using Nop.Plugin.Payments.ChargeAfter.Domain.Promo;
 
 namespace Nop.Plugin.Payments.ChargeAfter
 {
@@ -15,13 +16,19 @@ namespace Nop.Plugin.Payments.ChargeAfter
 
         public string SandboxPrivateKey { get; set; }
 
-        public string BrandId { get; set; }
-
         public decimal AdditionalFee { get; set; }
 
         public bool AdditionalFeePercentage { get; set; }
 
+        public TransactionType TypeTransaction { get; set; }
+
+        public bool UseAutoCapture => TypeTransaction.Equals(TransactionType.Capture);
+
+        public CheckoutBrandType TypeCheckoutBrand { get; set; } = CheckoutBrandType.MediumGeneric;
+
         public bool EnableLineOfCreditPromo { get; set; }
+
+        public LineOfCreditType TypeLineOfCreditPromo { get; set; } = LineOfCreditType.ProductWidgetLineOfCredit;
 
         public string FinancingPageUrlLineOfCreditPromo { get; set; }
 
@@ -44,5 +51,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
         public bool EnableSimplePromoProductAfterDesc { get; set; }
 
         public PromoWidgetType WidgetTypeSimplePromoProductAfterDesc { get; set; }
+
+        public bool EnableAdvancedSetting { get; set; }
     }
 }

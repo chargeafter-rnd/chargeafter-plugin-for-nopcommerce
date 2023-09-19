@@ -49,10 +49,6 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
             if (string.IsNullOrEmpty(caPublicKey))
                 return Content(string.Empty);
 
-            //ensure that it's a proper widget zone
-            //if (!widgetZone.Equals(PublicWidgetZones.CheckoutConfirmTop) && !widgetZone.Equals(PublicWidgetZones.OpCheckoutConfirmTop))
-            //    return Content(string.Empty);
-
             var model = _checkoutDataService.GetCheckoutData();
             return View("~/Plugins/Payments.ChargeAfter/Views/Checkout/CheckoutScript.cshtml", model);
         }

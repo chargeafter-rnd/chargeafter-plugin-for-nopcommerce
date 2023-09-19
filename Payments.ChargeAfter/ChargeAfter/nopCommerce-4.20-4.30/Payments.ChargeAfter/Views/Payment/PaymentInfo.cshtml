@@ -1,7 +1,8 @@
 ﻿@model Nop.Plugin.Payments.ChargeAfter.Models.PaymentInfoModel
-@{
-    Layout = "";
+@{ 
+    Layout = ""; 
 }
+
 <div id="chargeafter-payment" style="display: none"></div>
 <table width="100%" cellpadding="0" cellspacing="0">
     <tr>
@@ -13,3 +14,6 @@
     @await Component.InvokeAsync(Defaults.CHECKOUT_SCRIPT_VIEW_COMPONENT_NAME)
 </table>
 <div id="chargeafter-payment-error" role="alert" style="color:red"></div>
+
+<!link rel="stylesheet" href="/Plugins/Payments.ChargeAfter/Content/chargeafterloader.css" />
+<!script src="/Plugins/Payments.ChargeAfter/Content/chargeafterloader.js"></!script>

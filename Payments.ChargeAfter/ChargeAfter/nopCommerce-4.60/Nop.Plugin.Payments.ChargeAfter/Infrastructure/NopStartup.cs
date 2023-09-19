@@ -19,10 +19,10 @@ namespace Nop.Plugin.Payments.ChargeAfter.Infrastructure
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
             services.AddScoped<ServiceManager>();
-            services.AddScoped<IPluginService, PluginServiceOverride>();
             services.AddScoped<ICheckoutDataService, CheckoutDataService>();
             services.AddScoped<INonLeasableService, NonLeasableService>();
             services.AddScoped<IOrderTaxService, OrderTaxService>();
+            services.AddScoped<IOrderSaleService, OrderSaleService>();
 
             //override product controller in admin area
             services.AddScoped<Web.Areas.Admin.Controllers.ProductController, PaymentChargeAfterProductController>();

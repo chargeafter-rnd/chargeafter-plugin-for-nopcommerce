@@ -1,8 +1,6 @@
-﻿using System;
-
-namespace Nop.Plugin.Payments.ChargeAfter.Core
+﻿namespace Nop.Plugin.Payments.ChargeAfter.Core
 {
-    public class ChargeAfterEnvironment : Nop.Plugin.Payments.ChargeAfter.Core.Http.Environment
+    public class ChargeAfterEnvironment : Http.Environment
     {
         protected string baseUrl;
         private string clientPublic;
@@ -42,14 +40,6 @@ namespace Nop.Plugin.Payments.ChargeAfter.Core
         public string ClientPrivate()
         {
             return this.clientSecret;
-        }
-    }
-
-    public class CdnEnvironment : ChargeAfterEnvironment
-    {
-        public CdnEnvironment(string clientPublic, string clientSecret = "", bool useProduction = true) : base(clientPublic, clientSecret, useProduction)
-        {
-            this.baseUrl = ChargeAfterHelper.GetCdnUrl(useProduction);
         }
     }
 
