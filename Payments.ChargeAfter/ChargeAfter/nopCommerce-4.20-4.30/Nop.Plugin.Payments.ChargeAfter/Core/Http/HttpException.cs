@@ -11,11 +11,13 @@ namespace Nop.Plugin.Payments.ChargeAfter.Core.Http
     {
         public HttpStatusCode StatusCode { get; }
         public HttpHeaders Headers { get; }
+        public HttpErrorResponse Body { get; }
 
-        public HttpException(HttpStatusCode statusCode, HttpHeaders headers, string message) : base(message)
+        public HttpException(HttpStatusCode statusCode, HttpHeaders headers, string message, HttpErrorResponse body = null) : base(message)
         {
             StatusCode = statusCode;
             Headers = headers;
+            Body = body;
         }
     }
 }

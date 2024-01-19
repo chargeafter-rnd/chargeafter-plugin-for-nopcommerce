@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Text;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Core.Http
 {
@@ -11,11 +8,13 @@ namespace Nop.Plugin.Payments.ChargeAfter.Core.Http
     {
         public HttpStatusCode StatusCode { get; }
         public HttpHeaders Headers { get; }
+        public HttpErrorResponse Body { get; }
 
-        public HttpException(HttpStatusCode statusCode, HttpHeaders headers, string message) : base(message)
+        public HttpException(HttpStatusCode statusCode, HttpHeaders headers, string message, HttpErrorResponse body = null) : base(message)
         {
             StatusCode = statusCode;
             Headers = headers;
+            Body = body;
         }
     }
 }
