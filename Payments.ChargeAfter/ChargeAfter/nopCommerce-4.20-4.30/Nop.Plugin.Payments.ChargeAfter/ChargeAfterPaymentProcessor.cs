@@ -193,7 +193,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
 
             var (capture_response, capture_error) = _serviceManager.Capture(_chargeAfterPaymentSettings, chargeId, response.TotalAmount);
             if (!string.IsNullOrEmpty(capture_error))
-                return new CapturePaymentResult { Errors = new[] { "Charge settle error" } };
+                return new CapturePaymentResult { Errors = new[] { capture_error } };
 
             return new CapturePaymentResult 
             {
@@ -227,7 +227,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
             if (refundAmount > 0) {
                 var (_, refund_error) = _serviceManager.Refund(_chargeAfterPaymentSettings, chargeId, refundAmount);
                 if (!string.IsNullOrEmpty(refund_error)) { 
-                    return new RefundPaymentResult { Errors = new[] { "Refund error occured" } };
+                    return new RefundPaymentResult { Errors = new[] { refund_error } };
                 }
             }
 
@@ -256,7 +256,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
             {
                 var (void_response, void_error) = _serviceManager.Void(_chargeAfterPaymentSettings, chargeId);
                 if (!string.IsNullOrEmpty(void_error))
-                    return new VoidPaymentResult { Errors = new[] { "Charge void error" } };
+                    return new VoidPaymentResult { Errors = new[] { void_error } };
 
                 return result;
             } 
@@ -265,7 +265,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
                 var amount = response.TotalAmount - response.RefundedAmount;
                 var (refund_response, refund_error) = _serviceManager.Refund(_chargeAfterPaymentSettings, chargeId, amount);
                 if (!string.IsNullOrEmpty(refund_error))
-                    return new VoidPaymentResult { Errors = new[] { "Charge void error" } };
+                    return new VoidPaymentResult { Errors = new[] { refund_error } };
 
                 return result;
             }

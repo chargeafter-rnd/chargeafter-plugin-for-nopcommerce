@@ -73,8 +73,15 @@ namespace Nop.Plugin.Payments.ChargeAfter.Core.Http
             }
             else
             {
-                var responseBody = await response.Content.ReadAsStringAsync();
-                throw new HttpException(response.StatusCode, response.Headers, responseBody);
+                HttpErrorResponse responseBody = null;
+                var responseBodyAsString = await response.Content.ReadAsStringAsync();
+
+                if(response.Content.Headers.ContentType != null)
+                {
+                    responseBody = (HttpErrorResponse)Encoder.DeserializeResponse(response.Content, typeof(HttpErrorResponse));
+                }
+
+                throw new HttpException(response.StatusCode, response.Headers, responseBodyAsString, responseBody);
             }
         }
     }

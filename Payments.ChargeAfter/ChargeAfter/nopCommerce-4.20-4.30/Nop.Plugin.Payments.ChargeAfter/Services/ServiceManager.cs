@@ -5,6 +5,7 @@ using Nop.Plugin.Payments.ChargeAfter.Core.Http;
 using Nop.Plugin.Payments.ChargeAfter.Charges;
 using Nop.Plugin.Payments.ChargeAfter.Payments;
 using System;
+using System.Linq;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Services
 {
@@ -90,7 +91,19 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             }
             catch (Exception exception)
             {
-                return (default, exception.Message);
+                if (exception.InnerException != null && exception.InnerException is HttpException httpException)
+                {
+                    if (httpException?.Body?.Errors != null)
+                    {
+                        var error = httpException.Body.Errors.FirstOrDefault(r => r.Description != null);
+                        if (error != null)
+                        {
+                            return (default, error.Description);
+                        }
+                    }
+                }
+
+                return (default, "Request error occurred");
             }
         }
 
