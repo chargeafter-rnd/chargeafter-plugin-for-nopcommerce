@@ -1,21 +1,17 @@
-﻿@model NonLeasableProductModel
+﻿@model ChargeAfterProductAttributeModel
 
 @{
-    const string hideLeasableBlockAttributeName = "ProductPage.HideLeasableBlock";
-    var hideLeasableBlock = genericAttributeService.GetAttribute<bool>(workContext.CurrentCustomer, hideLeasableBlockAttributeName);
+    const string hideChargeAfterBlockAttributeName = "ProductPage.HideChargeAfterBlock";
+    var hideChargeAfterBlock = genericAttributeService.GetAttribute<bool>(workContext.CurrentCustomer, hideChargeAfterBlockAttributeName);
 }
 
 <nop-panel asp-name="product-non-leasable"
            asp-icon="fa fa-flag"
-           asp-title="@T("Plugins.Payments.ChargeAfter.Fields.NonLeasable")"
-           asp-hide-block-attribute-name="@hideLeasableBlockAttributeName"
-           asp-hide="@hideLeasableBlock"
+           asp-title="@T("Plugins.Payments.ChargeAfter.Header.ProductAttr")"
+           asp-hide-block-attribute-name="@hideChargeAfterBlockAttributeName"
+           asp-hide="@hideChargeAfterBlock"
            asp-advanced="false">
     <div class="panel-body">
-        <p>
-            @T("Plugins.Payments.ChargeAfter.Fields.NonLeasable.Hint")
-        </p>
-
         @if (Model.ProductId > 0)
         {
             <div class="form-group">
@@ -27,12 +23,21 @@
                     <span asp-validation-for="CaNonLeasable"></span>
                 </div>
             </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="CaWarranty" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="CaWarranty" />
+                    <span asp-validation-for="CaWarranty"></span>
+                </div>
+            </div>
         }
         else
         {
             <div class="panel panel-default">
                 <div class="panel-body">
-                    @T("Plugins.Payments.ChargeAfter.Fields.NonLeasable.SaveBeforeEdit")
+                    @T("Plugins.Payments.ChargeAfter.Fields.ProductAttr.SaveBeforeEdit")
                 </div>
             </div>
         }

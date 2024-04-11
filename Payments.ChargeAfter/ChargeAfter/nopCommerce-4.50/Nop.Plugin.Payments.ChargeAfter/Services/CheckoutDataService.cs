@@ -42,7 +42,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
         private readonly IDiscountService _discountService;
         private readonly ITaxService _taxService;
         private readonly IGenericAttributeService _genericAttributeService;
-        private readonly INonLeasableService _nonLeasableService;
+        private readonly ICustomProductAttributeService _productAttributeService;
         private readonly ICheckoutAttributeParser _checkoutAttributeParser;
         private readonly ICheckoutAttributeService _checkoutAttributeService;
 
@@ -65,7 +65,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             ChargeAfterPaymentSettings settings,
             IGenericAttributeService genericAttributeService,
             IDiscountService discountService,
-            INonLeasableService nonLeasableService,
+            ICustomProductAttributeService productAttributeService,
             ICheckoutAttributeParser checkoutAttributeParser,
             ICheckoutAttributeService checkoutAttributeService
         )
@@ -84,7 +84,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             _settings = settings;
             _genericAttributeService = genericAttributeService;
             _discountService = discountService;
-            _nonLeasableService = nonLeasableService;
+            _productAttributeService = productAttributeService;
             _checkoutAttributeParser = checkoutAttributeParser;
             _checkoutAttributeService = checkoutAttributeService;
         }
@@ -144,16 +144,30 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                 );
 
                 // cart item
+                var productName = await _localizationService.GetLocalizedAsync(product, x => x.Name);
+                var productSku = await _productService.FormatSkuAsync(product, sci.AttributesXml);
+
                 var itemModel = new CheckoutModel.CheckoutItemModel
                 {
-                    Sku = await _productService.FormatSkuAsync(product, sci.AttributesXml),
+                    Sku = productSku,
                     Id = sci.ProductId,
                     ProductId = sci.ProductId,
-                    Name = await _localizationService.GetLocalizedAsync(product, x => x.Name),
+                    Name = productName,
                     Quantity = sci.Quantity,
-                    UnitPrice = (float)cartItemSubTotalWithDiscount/sci.Quantity,
-                    Leasable = await _nonLeasableService.GetAttributeValueAsync(product) == false
+                    UnitPrice = cartItemSubTotalWithDiscount/sci.Quantity,
+                    Leasable = await _productAttributeService.GetNonLeasableAttributeValueAsync(product) == false
                 };
+
+                var warranty = await _productAttributeService.GetWarrantyAttributeValueAsync(product);
+                if (warranty)
+                {
+                    itemModel.Warranty = new CheckoutModel.CheckoutItemModel.WarrantyItemModel
+                    {
+                        Name = productName,
+                        Price = 0,
+                        Sku = productSku
+                    };
+                }
 
                 model.Items.Add(itemModel);
             }
@@ -190,7 +204,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                                     Sku = string.Format("checkout_attr_{0}", attribute.Id),
                                     Name = await _localizationService.GetLocalizedAsync(attribute, a => a.Name),
                                     Quantity = 1,
-                                    UnitPrice = (float)priceAdjustment,
+                                    UnitPrice = priceAdjustment,
                                     Leasable = true
                                 };
                                 model.Items.Add(itemModel);

@@ -14,7 +14,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Infrastructure
         {
             builder.RegisterType<ServiceManager>().AsSelf().InstancePerLifetimeScope();
             builder.RegisterType<CheckoutDataService>().As<ICheckoutDataService>().InstancePerLifetimeScope();
-            builder.RegisterType<NonLeasableService>().As<INonLeasableService>().InstancePerLifetimeScope();
+            builder.RegisterType<CustomProductAttributeService>().As<ICustomProductAttributeService>().InstancePerLifetimeScope();
             builder.RegisterType<OrderTaxService>().As<IOrderTaxService>().InstancePerLifetimeScope();
             builder.RegisterType<OrderSaleService>().As<IOrderSaleService>().InstancePerLifetimeScope();
 
