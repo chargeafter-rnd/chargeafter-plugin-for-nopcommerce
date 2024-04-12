@@ -29,5 +29,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
         public static string UserAgent => $"nopCommerce-{NopVersion.CURRENT_VERSION}";
 
         public static string NonLeasableAttribute = "ChargeAfterNonLeasable";
+
+        public static string WarrantyAttribute = "ChargeAfterWarranty";
     }
 }

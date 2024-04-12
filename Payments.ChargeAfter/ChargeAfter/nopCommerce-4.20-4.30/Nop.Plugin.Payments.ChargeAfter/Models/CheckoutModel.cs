@@ -45,11 +45,22 @@ namespace Nop.Plugin.Payments.ChargeAfter.Models
 
             public string Name { get; set; }
 
-            public float UnitPrice { get; set; }
+            public decimal UnitPrice { get; set; }
 
             public int Quantity { get; set; }
 
             public bool Leasable { get; set; }
+
+            public WarrantyItemModel Warranty { get; set; }
+
+            public partial class WarrantyItemModel
+            {
+                public string Name { get; set; }
+
+                public decimal Price { get; set; }
+
+                public string Sku { get; set; }
+            }
         }
 
         public partial class CheckoutDiscountItemModel : BaseNopEntityModel

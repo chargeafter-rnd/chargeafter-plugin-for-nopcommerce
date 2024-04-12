@@ -29,7 +29,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
         #region Fields
 
         private IProductService _productService;
-        private INonLeasableService _nonLeasableService;
+        private ICustomProductAttributeService _customProductAttributeService;
 
         #endregion
 
@@ -68,7 +68,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
             IUrlRecordService urlRecordService, 
             IWorkContext workContext, 
             VendorSettings vendorSettings,
-            INonLeasableService nonLeasableService
+            ICustomProductAttributeService customProductAttributeService
         ) : base(aclService,
                  backInStockSubscriptionService,
                  categoryService,
@@ -103,7 +103,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
                  vendorSettings)
         {
             _productService = productService;
-            _nonLeasableService = nonLeasableService;
+            _customProductAttributeService = customProductAttributeService;
         }
 
         #endregion
@@ -114,12 +114,19 @@ namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
         {
             var action = base.Edit(model, continueEditing);
 
-            if(ModelState.IsValid && HttpContext.Request.Form.TryGetValue("CaNonLeasable", out var values))
+            if(ModelState.IsValid)
             {
                 var product = _productService.GetProductById(model.Id);
-                var value = Convert.ToBoolean(values[0]);
 
-                _nonLeasableService.SetAttributeValue(product, value);
+                if (HttpContext.Request.Form.TryGetValue("CaNonLeasable", out var nonLeasableValues))
+                {
+                    _customProductAttributeService.SetNonLeasableAttributeValue(product, Convert.ToBoolean(nonLeasableValues[0]));
+                }
+
+                if (HttpContext.Request.Form.TryGetValue("CaWarranty", out var warrantyValues))
+                {
+                     _customProductAttributeService.SetWarrantyAttributeValue(product, Convert.ToBoolean(warrantyValues[0]));
+                }
             }
 
             return action;

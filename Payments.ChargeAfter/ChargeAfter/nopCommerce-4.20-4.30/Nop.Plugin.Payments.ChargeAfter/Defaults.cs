@@ -30,6 +30,8 @@ namespace Nop.Plugin.Payments.ChargeAfter
 
         public static string NonLeasableAttribute = "ChargeAfterNonLeasable";
 
+        public static string WarrantyAttribute = "ChargeAfterWarranty";
+
         public const string PAYMENT_INFO_VIEW_COMPONENT_NAME = "ChargeAfterPaymentInfo";
 
         public const string CHECKOUT_SCRIPT_VIEW_COMPONENT_NAME = "ChargeAfterCheckoutScript";

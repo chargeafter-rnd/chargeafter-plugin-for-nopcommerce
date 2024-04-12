@@ -1,4 +1,6 @@
-﻿<script type="text/javascript">
+﻿@model CheckoutModel
+
+<script type="text/javascript">
     var startCheckout = function () {
         let caData = {
             consumerDetails: {
@@ -23,7 +25,7 @@
             },
             cartDetails: {
                 items: [@foreach(var item in Model.Items) {
-                    @Html.Raw("{ name: \"" + item.Name + "\", price: " + item.UnitPrice + ", sku: \"" + item.Sku + "\", quantity: " + item.Quantity + ", leasable: " + ( item.Leasable ? "true" : "false" ) + " },")
+                    @Html.Raw("{ name: \"" + item.Name + "\", price: " + item.UnitPrice + ", sku: \"" + item.Sku + "\", quantity: " + item.Quantity + ", leasable: " + ( item.Leasable ? "true" : "false" ) + ( item.Warranty != null ? ", warranty: { name: \"" + item.Warranty.Name + "\", price: " + item.Warranty.Price + ", sku: \"" + item.Warranty.Sku + "\" }" : "" ) + " },")
                 }],
                 @if(Model.DiscountItems.Count > 0)
                 {
@@ -88,7 +90,7 @@
                 }
             });
     }
-    
+
     // Terms
     function submitCheckoutCA() {
         // Prevent submit if is not ChargeAfter
@@ -104,30 +106,30 @@
 
         var termOfServiceOk = true,
             termsOfService = $('#termsofservice');
-        
+
         if (termsOfService.length === 0) {
             termsOfService = $('#terms-of-service');
         }
-        
+
         if (termsOfService.length > 0 && !termsOfService.is(":hidden")) {
             if (!termsOfService.is(':checked')) {
                 var readTerms = $("#terms-of-service-warning-box");
-                
+
                 if (readTerms.length === 0) {
                     readTerms = $('#read-terms');
                 }
-                
+
                 readTerms.dialog();
                 termOfServiceOk = false;
             } else {
                 termOfServiceOk = true;
             }
         }
-        
+
         if (termOfServiceOk) {
             startCheckout();
         }
-        
+
         return false;
     }
 
@@ -144,8 +146,8 @@
         // Dom Ready
         $(document).ready(function () {
             $('.payment-info-next-step-button, .confirm-order-button')
-                .show().prop("onclick", null).unbind().click(submitCheckoutCA);   
-            
+                .show().prop("onclick", null).unbind().click(submitCheckoutCA);
+
             $('#checkoutForm').find('button[data-complete]')
                 .show().prop("onclick", null).unbind().click(submitCheckoutCA);
         });

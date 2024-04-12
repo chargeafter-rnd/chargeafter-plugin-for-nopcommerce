@@ -339,7 +339,8 @@ namespace Nop.Plugin.Payments.ChargeAfter
                 ["Plugins.Payments.ChargeAfter.Header.Checkout"] = "Checkout",
                 ["Plugins.Payments.ChargeAfter.Header.PromoLineOfCredit"] = "Promo: Line of Credit",
                 ["Plugins.Payments.ChargeAfter.Header.PromoSimple"] = "Promo: Simple Widgets",
-                
+                ["Plugins.Payments.ChargeAfter.Header.ProductAttr"] = "Consumer Financing attributes",
+
                 ["Plugins.Payments.ChargeAfter.Fields.ProductionPublicKey"] = "Production Public Key",
                 ["Plugins.Payments.ChargeAfter.Fields.ProductionPublicKey.Hint"] = "The REST API public key is used to authenticate this plugin with the ChargeAfter API.",
                 ["Plugins.Payments.ChargeAfter.Fields.ProductionPublicKey.Required"] = "Production Public Key is required.",
@@ -402,9 +403,11 @@ namespace Nop.Plugin.Payments.ChargeAfter
                 ["Plugins.Payments.ChargeAfter.Fields.WidgetTypeSimplePromoProductAfterDesc.Hint"] = "The type of widget to be displayed on product page after product description.",
 
                 ["Plugins.Payments.ChargeAfter.Fields.NonLeasable"] = "Non Leasable",
-                ["Plugins.Payments.ChargeAfter.Fields.NonLeasable.SaveBeforeEdit"] = "You need to save the product before you can edit non-leasable attribute for this product page.",
-                ["Plugins.Payments.ChargeAfter.Fields.NonLeasable.Hint"] = "Specifying whether a product is non-leasable is required when offering a lease-to-own financing option",
+                ["Plugins.Payments.ChargeAfter.Fields.NonLeasable.Hint"] = "Specifying whether a product is non-leasable is required when offering a lease-to-own financing option.",
+                ["Plugins.Payments.ChargeAfter.Fields.Warranty"] = "Warranty",
+                ["Plugins.Payments.ChargeAfter.Fields.Warranty.Hint"] = "Specifying whether a product has a warranty.",
 
+                ["Plugins.Payments.ChargeAfter.Fields.ProductAttr.SaveBeforeEdit"] = "You need to save the product before you can edit consumer financing attributes for this product.",
 
                 ["Plugins.Payments.ChargeAfter.Customer.Checkout.Token"] = "ChargeAfter Confirmation Token",
             });

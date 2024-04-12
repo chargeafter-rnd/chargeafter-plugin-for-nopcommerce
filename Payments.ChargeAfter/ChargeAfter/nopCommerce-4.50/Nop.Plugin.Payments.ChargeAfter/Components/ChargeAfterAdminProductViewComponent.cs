@@ -19,7 +19,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
         private readonly IPaymentPluginManager _paymentPluginManager;
         private readonly IStoreContext _storeContext;
         private readonly IWorkContext _workContext;
-        private readonly INonLeasableService _nonLeasableService;
+        private readonly ICustomProductAttributeService _productAttributeService;
         
         #endregion
 
@@ -30,14 +30,14 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
             IPaymentPluginManager paymentPluginManager,
             IStoreContext storeContext,
             IWorkContext workContext,
-            INonLeasableService nonLeasableService
+            ICustomProductAttributeService productAttributeService
         )
         {
             _productService = productService;
             _paymentPluginManager = paymentPluginManager;
             _storeContext = storeContext;
             _workContext = workContext;
-            _nonLeasableService = nonLeasableService;
+            _productAttributeService = productAttributeService;
         }
 
         #endregion
@@ -58,11 +58,12 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
             if (!(additionalData is Web.Areas.Admin.Models.Catalog.ProductModel productModel))
                 return Content(string.Empty);
 
-            var model = new NonLeasableProductModel { ProductId = productModel.Id };
+            var model = new ChargeAfterProductAttributeModel { ProductId = productModel.Id };
             if (model.ProductId > 0)
             {
                 var product = await _productService.GetProductByIdAsync(model.ProductId);
-                model.CaNonLeasable = await _nonLeasableService.GetAttributeValueAsync(product);
+                model.CaNonLeasable = await _productAttributeService.GetNonLeasableAttributeValueAsync(product);
+                model.CaWarranty = await _productAttributeService.GetWarrantyAttributeValueAsync(product);
             }
 
             return View("~/Plugins/Payments.ChargeAfter/Areas/Admin/Views/Product.cshtml", model);

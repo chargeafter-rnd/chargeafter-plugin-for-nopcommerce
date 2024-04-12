@@ -20,7 +20,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Infrastructure
         {
             services.AddScoped<ServiceManager>();
             services.AddScoped<ICheckoutDataService, CheckoutDataService>();
-            services.AddScoped<INonLeasableService, NonLeasableService>();
+            services.AddScoped<ICustomProductAttributeService, CustomProductAttributeService>();
             services.AddScoped<IOrderTaxService, OrderTaxService>();
             services.AddScoped<IOrderSaleService, OrderSaleService>();
 

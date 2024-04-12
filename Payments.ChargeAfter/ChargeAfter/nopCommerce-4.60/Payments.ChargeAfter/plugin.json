@@ -2,7 +2,7 @@
   "Group": "Payment methods",
   "FriendlyName": "ChargeAfter Consumer Financing",
   "SystemName": "Payments.ChargeAfter",
-  "Version": "1.5.0",
+  "Version": "1.6.0",
   "SupportedVersions": [ "4.60" ],
   "Author": "ChargeAfter",
   "DisplayOrder": 1,
