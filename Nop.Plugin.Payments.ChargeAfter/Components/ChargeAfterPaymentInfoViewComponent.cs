@@ -3,6 +3,7 @@ using Nop.Core;
 using Nop.Plugin.Payments.ChargeAfter.Models;
 using Nop.Services.Localization;
 using Nop.Web.Framework.Components;
+using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Components
 {
@@ -26,11 +27,11 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
             _workContext = workContext;
         }
 
-        public IViewComponentResult Invoke()
+        public async Task<IViewComponentResult> InvokeAsync()
         {
             var model = new PaymentInfoModel
             {
-                DescriptionText = _localizationService.GetResource("Plugins.Payment.ChargeAfter.PaymentMethod.Tip")
+                DescriptionText = await _localizationService.GetResourceAsync("Plugins.Payment.ChargeAfter.PaymentMethod.Tip")
             };
 
             return View("~/Plugins/Payments.ChargeAfter/Views/Payment/PaymentInfo.cshtml", model);

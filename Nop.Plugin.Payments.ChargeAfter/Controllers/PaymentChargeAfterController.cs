@@ -1,10 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
-using Nop.Core.Http.Extensions;
 using Nop.Plugin.Payments.ChargeAfter.Domain;
 using Nop.Plugin.Payments.ChargeAfter.Models;
-using Nop.Plugin.Payments.ChargeAfter.Services;
 using Nop.Services;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
@@ -14,6 +11,7 @@ using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Mvc.Filters;
 using System;
+using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Controllers
 {
@@ -29,7 +27,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
         private readonly IPermissionService _permissionService;
         private readonly ISettingService _settingService;
         private readonly IStoreContext _storeContext;
-        
+
         #endregion
 
         #region Ctor
@@ -52,14 +50,14 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
 
         #region Methods
 
-        public IActionResult Configure()
+        public async Task<IActionResult> ConfigureAsync()
         {
-            if (!_permissionService.Authorize(StandardPermissionProvider.ManagePaymentMethods))
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePaymentMethods))
                 return AccessDeniedView();
 
             //load settings for a chosen store scope
-            var storeScope = _storeContext.ActiveStoreScopeConfiguration;
-            var chargeAfterPaymentSettings = _settingService.LoadSetting<ChargeAfterPaymentSettings>(storeScope);
+            var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
+            var chargeAfterPaymentSettings = await _settingService.LoadSettingAsync<ChargeAfterPaymentSettings>(storeScope);
 
             var model = new ConfigurationModel
             {
@@ -75,35 +73,35 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                 AdditionalFeePercentage = chargeAfterPaymentSettings.AdditionalFeePercentage,
 
                 TypeTransaction = (int)chargeAfterPaymentSettings.TypeTransaction,
-                TypeTransactionValues = chargeAfterPaymentSettings.TypeTransaction.ToSelectList(),
+                TypeTransactionValues = await chargeAfterPaymentSettings.TypeTransaction.ToSelectListAsync(),
 
                 TypeCheckoutBrand = (int)chargeAfterPaymentSettings.TypeCheckoutBrand,
-                TypeCheckoutBrandValues = chargeAfterPaymentSettings.TypeCheckoutBrand.ToSelectList(),
+                TypeCheckoutBrandValues = await chargeAfterPaymentSettings.TypeCheckoutBrand.ToSelectListAsync(),
 
                 EnableLineOfCreditPromo = chargeAfterPaymentSettings.EnableLineOfCreditPromo,
                 TypeLineOfCreditPromo = (int)chargeAfterPaymentSettings.TypeLineOfCreditPromo,
-                TypeLineOfCreditPromoValues = chargeAfterPaymentSettings.TypeLineOfCreditPromo.ToSelectList(),
+                TypeLineOfCreditPromoValues = await chargeAfterPaymentSettings.TypeLineOfCreditPromo.ToSelectListAsync(),
                 FinancingPageUrlLineOfCreditPromo = chargeAfterPaymentSettings.FinancingPageUrlLineOfCreditPromo,
 
                 EnableSimplePromoBeforeContent = chargeAfterPaymentSettings.EnableSimplePromoBeforeContent,
                 WidgetTypeSimplePromoBeforeContentId = Convert.ToInt32(chargeAfterPaymentSettings.WidgetTypeSimplePromoBeforeContent),
-                WidgetTypeSimplePromoBeforeContentValues = chargeAfterPaymentSettings.WidgetTypeSimplePromoBeforeContent.ToSelectList(),
+                WidgetTypeSimplePromoBeforeContentValues = await chargeAfterPaymentSettings.WidgetTypeSimplePromoBeforeContent.ToSelectListAsync(),
 
                 EnableSimplePromoAfterContent = chargeAfterPaymentSettings.EnableSimplePromoAfterContent,
                 WidgetTypeSimplePromoAfterContentId = Convert.ToInt32(chargeAfterPaymentSettings.WidgetTypeSimplePromoAfterContent),
-                WidgetTypeSimplePromoAfterContentValues = chargeAfterPaymentSettings.WidgetTypeSimplePromoAfterContent.ToSelectList(),
+                WidgetTypeSimplePromoAfterContentValues = await chargeAfterPaymentSettings.WidgetTypeSimplePromoAfterContent.ToSelectListAsync(),
 
                 EnableSimplePromoProductBeforeContent = chargeAfterPaymentSettings.EnableSimplePromoProductBeforeContent,
                 WidgetTypeSimplePromoProductBeforeContentId = Convert.ToInt32(chargeAfterPaymentSettings.WidgetTypeSimplePromoProductBeforeContent),
-                WidgetTypeSimplePromoProductBeforeContentValues = chargeAfterPaymentSettings.WidgetTypeSimplePromoProductBeforeContent.ToSelectList(),
+                WidgetTypeSimplePromoProductBeforeContentValues = await chargeAfterPaymentSettings.WidgetTypeSimplePromoProductBeforeContent.ToSelectListAsync(),
 
                 EnableSimplePromoProductAfterTitle = chargeAfterPaymentSettings.EnableSimplePromoProductAfterTitle,
                 WidgetTypeSimplePromoProductAfterTitleId = Convert.ToInt32(chargeAfterPaymentSettings.WidgetTypeSimplePromoProductAfterTitle),
-                WidgetTypeSimplePromoProductAfterTitleValues = chargeAfterPaymentSettings.WidgetTypeSimplePromoProductAfterTitle.ToSelectList(),
+                WidgetTypeSimplePromoProductAfterTitleValues = await chargeAfterPaymentSettings.WidgetTypeSimplePromoProductAfterTitle.ToSelectListAsync(),
 
                 EnableSimplePromoProductAfterDesc = chargeAfterPaymentSettings.EnableSimplePromoProductAfterDesc,
                 WidgetTypeSimplePromoProductAfterDescId = Convert.ToInt32(chargeAfterPaymentSettings.WidgetTypeSimplePromoProductAfterDesc),
-                WidgetTypeSimplePromoProductAfterDescValues = chargeAfterPaymentSettings.WidgetTypeSimplePromoProductAfterDesc.ToSelectList(),
+                WidgetTypeSimplePromoProductAfterDescValues = await chargeAfterPaymentSettings.WidgetTypeSimplePromoProductAfterDesc.ToSelectListAsync(),
 
                 EnableAdvancedSetting = chargeAfterPaymentSettings.EnableAdvancedSetting,
 
@@ -112,39 +110,41 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
 
             if (storeScope > 0)
             {
-                model.UseProduction_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.UseProduction, storeScope);
+                model.UseProduction_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.UseProduction, storeScope);
 
-                model.ProductionPublicKey_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.ProductionPublicKey, storeScope);
-                model.ProductionPrivateKey_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.ProductionPrivateKey, storeScope);                
+                model.ProductionPublicKey_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.ProductionPublicKey, storeScope);
+                model.ProductionPrivateKey_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.ProductionPrivateKey, storeScope);                
                 
-                model.SandboxPublicKey_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.SandboxPublicKey, storeScope);
-                model.SandboxPrivateKey_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.SandboxPrivateKey, storeScope);
+                model.SandboxPublicKey_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.SandboxPublicKey, storeScope);
+                model.SandboxPrivateKey_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.SandboxPrivateKey, storeScope);
+                
+                model.AdditionalFee_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.AdditionalFee, storeScope);
+                model.AdditionalFeePercentage_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.AdditionalFeePercentage, storeScope);
 
-                model.TypeCheckoutBrand_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.TypeCheckoutBrand, storeScope);
+                model.TypeTransaction_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.TypeTransaction, storeScope);
 
-                model.AdditionalFee_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.AdditionalFee, storeScope);
-                model.AdditionalFeePercentage_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.AdditionalFeePercentage, storeScope);
+                model.TypeCheckoutBrand_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.TypeCheckoutBrand, storeScope);
 
-                model.TypeTransaction_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.TypeTransaction, storeScope);
+                model.EnableLineOfCreditPromo_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.EnableLineOfCreditPromo, storeScope);
+                model.TypeLineOfCreditPromo_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.TypeLineOfCreditPromo, storeScope);
+                model.FinancingPageUrlLineOfCreditPromo_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.FinancingPageUrlLineOfCreditPromo, storeScope);
 
-                model.EnableLineOfCreditPromo_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.EnableLineOfCreditPromo, storeScope);
-                model.TypeLineOfCreditPromo_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.TypeLineOfCreditPromo, storeScope);
-                model.FinancingPageUrlLineOfCreditPromo_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.FinancingPageUrlLineOfCreditPromo, storeScope);
+                model.EnableSimplePromoBeforeContent_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.EnableSimplePromoBeforeContent, storeScope);
+                model.WidgetTypeSimplePromoBeforeContentId_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoBeforeContent, storeScope);
 
-                model.EnableSimplePromoBeforeContent_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.EnableSimplePromoBeforeContent, storeScope);
-                model.WidgetTypeSimplePromoBeforeContentId_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoBeforeContent, storeScope);
+                model.EnableSimplePromoAfterContent_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.EnableSimplePromoAfterContent, storeScope);
+                model.WidgetTypeSimplePromoAfterContentId_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoAfterContent, storeScope);
 
-                model.EnableSimplePromoAfterContent_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.EnableSimplePromoAfterContent, storeScope);
-                model.WidgetTypeSimplePromoAfterContentId_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoAfterContent, storeScope);
+                model.EnableSimplePromoProductBeforeContent_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.EnableSimplePromoProductBeforeContent, storeScope);
+                model.WidgetTypeSimplePromoProductBeforeContentId_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoProductBeforeContent, storeScope);
 
-                model.EnableSimplePromoProductBeforeContent_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.EnableSimplePromoProductBeforeContent, storeScope);
-                model.WidgetTypeSimplePromoProductBeforeContentId_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoProductBeforeContent, storeScope);
+                model.EnableSimplePromoProductAfterTitle_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.EnableSimplePromoProductAfterTitle, storeScope);
+                model.WidgetTypeSimplePromoProductAfterTitleId_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoProductAfterTitle, storeScope);
 
-                model.EnableSimplePromoProductAfterTitle_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.EnableSimplePromoProductAfterTitle, storeScope);
-                model.WidgetTypeSimplePromoProductAfterTitleId_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoProductAfterTitle, storeScope);
+                model.EnableSimplePromoProductAfterDesc_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.EnableSimplePromoProductAfterDesc, storeScope);
+                model.WidgetTypeSimplePromoProductAfterDescId_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoProductAfterDesc, storeScope);
 
-                model.EnableSimplePromoProductAfterDesc_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.EnableSimplePromoProductAfterDesc, storeScope);
-                model.WidgetTypeSimplePromoProductAfterDescId_OverrideForStore = _settingService.SettingExists(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoProductAfterDesc, storeScope);
+                model.EnableAdvancedSetting = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.EnableAdvancedSetting, storeScope);
             }
 
             // ReSharper disable once Mvc.ViewNotResolved
@@ -152,17 +152,17 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
         }
 
         [HttpPost]
-        public IActionResult Configure(ConfigurationModel model)
+        public async Task<IActionResult> ConfigureAsync(ConfigurationModel model)
         {
-            if (!_permissionService.Authorize(StandardPermissionProvider.ManagePaymentMethods))
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePaymentMethods))
                 return AccessDeniedView();
 
             if (!ModelState.IsValid)
-                return Configure();
+                return await ConfigureAsync();
 
             //load settings for a chosen store scope
-            var storeScope = _storeContext.ActiveStoreScopeConfiguration;
-            var chargeAfterPaymentSettings = _settingService.LoadSetting<ChargeAfterPaymentSettings>(storeScope);
+            var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
+            var chargeAfterPaymentSettings = await _settingService.LoadSettingAsync<ChargeAfterPaymentSettings>(storeScope);
 
             //save settings
             chargeAfterPaymentSettings.UseProduction = model.UseProduction;
@@ -202,58 +202,58 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
             /* We do not clear cache after each setting update.
              * This behavior can increase performance because cached settings will not be cleared 
              * and loaded from database after each update */
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.UseProduction, model.UseProduction_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.UseProduction, model.UseProduction_OverrideForStore, storeScope, false);
 
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.ProductionPublicKey, model.ProductionPublicKey_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.ProductionPrivateKey, model.ProductionPrivateKey_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.ProductionPublicKey, model.ProductionPublicKey_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.ProductionPrivateKey, model.ProductionPrivateKey_OverrideForStore, storeScope, false);
 
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.SandboxPublicKey, model.SandboxPublicKey_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.SandboxPrivateKey, model.SandboxPrivateKey_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.SandboxPublicKey, model.SandboxPublicKey_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.SandboxPrivateKey, model.SandboxPrivateKey_OverrideForStore, storeScope, false);
 
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.AdditionalFee, model.AdditionalFee_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.AdditionalFeePercentage, model.AdditionalFeePercentage_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.AdditionalFee, model.AdditionalFee_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.AdditionalFeePercentage, model.AdditionalFeePercentage_OverrideForStore, storeScope, false);
 
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.TypeTransaction, model.TypeTransaction_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.TypeTransaction, model.TypeTransaction_OverrideForStore, storeScope, false); 
+            
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.TypeCheckoutBrand, model.TypeCheckoutBrand_OverrideForStore, storeScope, false);
+            
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.EnableLineOfCreditPromo, model.EnableLineOfCreditPromo_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.TypeLineOfCreditPromo, model.TypeLineOfCreditPromo_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.FinancingPageUrlLineOfCreditPromo, model.FinancingPageUrlLineOfCreditPromo_OverrideForStore, storeScope, false);
 
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.TypeCheckoutBrand, model.TypeCheckoutBrand_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.EnableSimplePromoBeforeContent, model.EnableSimplePromoBeforeContent_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoBeforeContent, model.WidgetTypeSimplePromoBeforeContentId_OverrideForStore, storeScope, false);
 
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.EnableLineOfCreditPromo, model.EnableLineOfCreditPromo_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.TypeLineOfCreditPromo, model.TypeLineOfCreditPromo_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.FinancingPageUrlLineOfCreditPromo, model.FinancingPageUrlLineOfCreditPromo_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.EnableSimplePromoAfterContent, model.EnableSimplePromoAfterContent_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoAfterContent, model.WidgetTypeSimplePromoAfterContentId_OverrideForStore, storeScope, false);
 
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.EnableSimplePromoBeforeContent, model.EnableSimplePromoBeforeContent_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoBeforeContent, model.WidgetTypeSimplePromoBeforeContentId_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.EnableSimplePromoProductBeforeContent, model.EnableSimplePromoProductBeforeContent_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoProductBeforeContent, model.WidgetTypeSimplePromoProductBeforeContentId_OverrideForStore, storeScope, false);
 
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.EnableSimplePromoAfterContent, model.EnableSimplePromoAfterContent_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoAfterContent, model.WidgetTypeSimplePromoAfterContentId_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.EnableSimplePromoProductAfterTitle, model.EnableSimplePromoProductAfterTitle_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoProductAfterTitle, model.WidgetTypeSimplePromoProductAfterTitleId_OverrideForStore, storeScope, false);
 
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.EnableSimplePromoProductBeforeContent, model.EnableSimplePromoProductBeforeContent_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoProductBeforeContent, model.WidgetTypeSimplePromoProductBeforeContentId_OverrideForStore, storeScope, false);
-
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.EnableSimplePromoProductAfterTitle, model.EnableSimplePromoProductAfterTitle_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoProductAfterTitle, model.WidgetTypeSimplePromoProductAfterTitleId_OverrideForStore, storeScope, false);
-
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.EnableSimplePromoProductAfterDesc, model.EnableSimplePromoProductAfterDesc_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoProductAfterDesc, model.WidgetTypeSimplePromoProductAfterDescId_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.EnableSimplePromoProductAfterDesc, model.EnableSimplePromoProductAfterDesc_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoProductAfterDesc, model.WidgetTypeSimplePromoProductAfterDescId_OverrideForStore, storeScope, false);
 
             //now clear settings cache
-            _settingService.ClearCache();
+            await _settingService.ClearCacheAsync();
 
             //notification
-            _notificationService.SuccessNotification(_localizationService.GetResource("Admin.Plugins.Saved"));
+            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Plugins.Saved"));
 
-            return Configure();
+            return await ConfigureAsync();
         }
 
         [HttpPost]
-        public IActionResult SavePreferenceMode(bool value)
+        public async Task<IActionResult> SavePreferenceModeAsync(bool value)
         {
-            if (!_permissionService.Authorize(StandardPermissionProvider.ManagePaymentMethods))
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePaymentMethods))
                 return AccessDeniedView();
 
             //load settings for a chosen store scope
-            var storeScope = _storeContext.ActiveStoreScopeConfiguration;
-            var chargeAfterPaymentSettings = _settingService.LoadSetting<ChargeAfterPaymentSettings>(storeScope);
+            var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
+            var chargeAfterPaymentSettings = await _settingService.LoadSettingAsync<ChargeAfterPaymentSettings>(storeScope);
 
             //save settings
             chargeAfterPaymentSettings.EnableAdvancedSetting = value;
@@ -261,13 +261,14 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
             /* We do not clear cache after each setting update.
              * This behavior can increase performance because cached settings will not be cleared 
              * and loaded from database after each update */
-            _settingService.SaveSettingOverridablePerStore(chargeAfterPaymentSettings, x => x.EnableAdvancedSetting, value, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.EnableAdvancedSetting, value, storeScope, false);
 
             //now clear settings cache
-            _settingService.ClearCache();
+            await _settingService.ClearCacheAsync();
 
             return Json(new { Result = true });
         }
+
 
         #endregion
 

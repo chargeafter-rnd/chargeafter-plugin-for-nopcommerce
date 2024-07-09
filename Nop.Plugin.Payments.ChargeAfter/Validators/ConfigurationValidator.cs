@@ -13,27 +13,27 @@ namespace Nop.Plugin.Payments.ChargeAfter.Validators
         {
             RuleFor(model => model.SandboxPublicKey)
                 .NotEmpty()
-                .WithMessage(localizationService.GetResource("Plugins.Payments.ChargeAfter.Fields.SandboxPublicKey.Required"))
+                .WithMessage(localizationService.GetResourceAsync("Plugins.Payments.ChargeAfter.Fields.SandboxPublicKey.Required").Result)
                 .When(model => !model.UseProduction);
 
             RuleFor(model => model.SandboxPrivateKey)
                 .NotEmpty()
-                .WithMessage(localizationService.GetResource("Plugins.Payments.ChargeAfter.Fields.SandboxPrivateKey.Required"))
+                .WithMessage(localizationService.GetResourceAsync("Plugins.Payments.ChargeAfter.Fields.SandboxPrivateKey.Required").Result)
                 .When(model => !model.UseProduction);
 
             RuleFor(model => model.ProductionPublicKey)
                 .NotEmpty()
-                .WithMessage(localizationService.GetResource("Plugins.Payments.ChargeAfter.Fields.ProductionPublicKey.Required"))
+                .WithMessage(localizationService.GetResourceAsync("Plugins.Payments.ChargeAfter.Fields.ProductionPublicKey.Required").Result)
                 .When(model => model.UseProduction);
 
             RuleFor(model => model.ProductionPrivateKey)
                 .NotEmpty()
-                .WithMessage(localizationService.GetResource("Plugins.Payments.ChargeAfter.Fields.ProductionPrivateKey.Required"))
+                .WithMessage(localizationService.GetResourceAsync("Plugins.Payments.ChargeAfter.Fields.ProductionPrivateKey.Required").Result)
                 .When(model => model.UseProduction);
 
             RuleFor(model => model.FinancingPageUrlLineOfCreditPromo)
                 .NotEmpty()
-                .WithMessage(localizationService.GetResource("Plugins.Payments.ChargeAfter.Fields.ProductionPublicKey.Required"))
+                .WithMessage(localizationService.GetResourceAsync("Plugins.Payments.ChargeAfter.Fields.ProductionPublicKey.Required").Result)
                 .When(model => model.EnableLineOfCreditPromo);
         }
 

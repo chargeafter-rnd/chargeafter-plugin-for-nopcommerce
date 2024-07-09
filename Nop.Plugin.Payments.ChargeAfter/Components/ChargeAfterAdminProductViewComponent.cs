@@ -6,6 +6,7 @@ using Nop.Services.Catalog;
 using Nop.Services.Payments;
 using Nop.Web.Framework.Components;
 using Nop.Web.Framework.Infrastructure;
+using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Components
 {
@@ -19,7 +20,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
         private readonly IStoreContext _storeContext;
         private readonly IWorkContext _workContext;
         private readonly ICustomProductAttributeService _productAttributeService;
-
+        
         #endregion
 
         #region Ctor
@@ -43,24 +44,26 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
 
         #region Methods
 
-        public IViewComponentResult Invoke(string widgetZone, object additionalData)
+        public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object additionalData)
         {
-            if (!_paymentPluginManager.IsPluginActive(Defaults.SystemName, _workContext.CurrentCustomer, _storeContext.CurrentStore.Id))
+            if (!await _paymentPluginManager.IsPluginActiveAsync(Defaults.SystemName,
+                                                                 await _workContext.GetCurrentCustomerAsync(),
+                                                                 _storeContext.GetCurrentStore().Id))
                 return Content(string.Empty);
 
             //ensure that it's a proper widget zone
             if (!widgetZone.Equals(AdminWidgetZones.ProductDetailsBlock))
                 return Content(string.Empty);
 
-            if (!(additionalData is Web.Areas.Admin.Models.Catalog.ProductModel productModel)) 
+            if (!(additionalData is Web.Areas.Admin.Models.Catalog.ProductModel productModel))
                 return Content(string.Empty);
 
             var model = new ChargeAfterProductAttributeModel { ProductId = productModel.Id };
             if (model.ProductId > 0)
             {
-                var product = _productService.GetProductById(model.ProductId);
-                model.CaNonLeasable = _productAttributeService.GetNonLeasableAttributeValue(product);
-                model.CaWarranty = _productAttributeService.GetWarrantyAttributeValue(product);
+                var product = await _productService.GetProductByIdAsync(model.ProductId);
+                model.CaNonLeasable = await _productAttributeService.GetNonLeasableAttributeValueAsync(product);
+                model.CaWarranty = await _productAttributeService.GetWarrantyAttributeValueAsync(product);
             }
 
             return View("~/Plugins/Payments.ChargeAfter/Areas/Admin/Views/Product.cshtml", model);
@@ -69,3 +72,4 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
         #endregion
     }
 }
+

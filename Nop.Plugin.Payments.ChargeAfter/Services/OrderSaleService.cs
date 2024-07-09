@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Nop.Core;
+using Nop.Core.Domain.Orders;
+using Nop.Core.Infrastructure;
 using Nop.Services.Localization;
 using Nop.Services.Logging;
 using Nop.Services.Orders;
@@ -9,7 +12,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
 {
     public interface IOrderSaleService
     {
-        public void Capture(int orderId);
+        public Task CaptureAsync(int orderId);
     }
 
     public class OrderSaleService : IOrderSaleService
@@ -48,30 +51,30 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
 
         #region Methods
 
-        public void Capture(int orderId)
+        public async Task CaptureAsync(int orderId)
         {
             try
             {
-                var order = _orderService.GetOrderById(orderId);
+                var order = await _orderService.GetOrderByIdAsync(orderId);
 
-                var errors = _orderProcessingService.Capture(order);
-                LogEditOrder(order.Id);
+                var errors = await _orderProcessingService.CaptureAsync(order);
+                await LogEditOrderAsync(order.Id);
 
                 if(errors != null && errors.Count > 0)
                     throw new NopException(errors.First<string>());
             }
             catch (Exception ex)
             {
-                _logger.Error(ex.Message, ex);
+                await _logger.ErrorAsync(ex.Message, ex);
             }
         }
 
-        private void LogEditOrder(int orderId)
+        private async Task LogEditOrderAsync(int orderId)
         {
-            var order = _orderService.GetOrderById(orderId);
+            var order = await _orderService.GetOrderByIdAsync(orderId);
 
-            _customerActivityService.InsertActivity("EditOrder",
-                string.Format(_localizationService.GetResource("ActivityLog.EditOrder"), order.CustomOrderNumber), order);
+            await _customerActivityService.InsertActivityAsync("EditOrder",
+                string.Format(await _localizationService.GetResourceAsync("ActivityLog.EditOrder"), order.CustomOrderNumber), order);
         }
 
         #endregion

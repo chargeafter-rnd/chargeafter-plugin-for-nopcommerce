@@ -1,7 +1,6 @@
 ﻿using Nop.Core;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Orders;
-using Nop.Core.Domain.Tax;
 using Nop.Plugin.Payments.ChargeAfter.Domain;
 using Nop.Plugin.Payments.ChargeAfter.Models;
 using Nop.Services.Catalog;
@@ -13,12 +12,13 @@ using Nop.Services.Orders;
 using Nop.Services.Payments;
 using Nop.Services.Tax;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Services
 {
     public interface ICheckoutDataService
     {
-        public CheckoutModel GetCheckoutData();
+        public Task<CheckoutModel> GetCheckoutDataAsync();
     }
 }
 
@@ -39,7 +39,6 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
         private readonly ILocalizationService _localizationService;
         private readonly ICurrencyService _currencyService;
         private readonly IOrderTotalCalculationService _orderTotalCalculationService;
-        private readonly TaxSettings _taxSettings;
         private readonly IDiscountService _discountService;
         private readonly ITaxService _taxService;
         private readonly IGenericAttributeService _genericAttributeService;
@@ -62,11 +61,10 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             ILocalizationService localizationService,
             ICurrencyService currencyService,
             IOrderTotalCalculationService orderTotalCalculationService,
-            IDiscountService discountService,
             ITaxService taxService,
             ChargeAfterPaymentSettings settings,
-            TaxSettings taxSettings,
             IGenericAttributeService genericAttributeService,
+            IDiscountService discountService,
             ICustomProductAttributeService productAttributeService,
             ICheckoutAttributeParser checkoutAttributeParser,
             ICheckoutAttributeService checkoutAttributeService
@@ -82,11 +80,10 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             _localizationService = localizationService;
             _currencyService = currencyService;
             _orderTotalCalculationService = orderTotalCalculationService;
-            _discountService = discountService;
             _taxService = taxService;
             _settings = settings;
-            _taxSettings = taxSettings;
             _genericAttributeService = genericAttributeService;
+            _discountService = discountService;
             _productAttributeService = productAttributeService;
             _checkoutAttributeParser = checkoutAttributeParser;
             _checkoutAttributeService = checkoutAttributeService;
@@ -96,17 +93,18 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
 
         #region Methods
 
-        public CheckoutModel GetCheckoutData()
+        public async Task<CheckoutModel> GetCheckoutDataAsync()
         {
-            var customer = _workContext.CurrentCustomer;
+            var customer = await _workContext.GetCurrentCustomerAsync();
+            var currentStore = await _storeContext.GetCurrentStoreAsync();
 
-            if (!_paymentPluginManager.IsPluginActive(Defaults.SystemName, customer, _storeContext.CurrentStore.Id))
+            if (!await _paymentPluginManager.IsPluginActiveAsync(Defaults.SystemName, customer, currentStore.Id))
                 throw new NopException("Unauthorized action");
-
-            var paymentMethodSystemName = _genericAttributeService.GetAttribute<string>(
+            
+            var paymentMethodSystemName = await _genericAttributeService.GetAttributeAsync<string>(
                 customer,
                 NopCustomerDefaults.SelectedPaymentMethodAttribute, 
-                _storeContext.CurrentStore.Id
+                currentStore.Id
             );
 
             if (!paymentMethodSystemName.Equals(Defaults.SystemName))
@@ -116,70 +114,38 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             if (string.IsNullOrEmpty(caPublicKey))
                 throw new NopException("Incorrect credentials");
 
-            if (customer.BillingAddressId == null)
-                throw new NopException("Invalid customer billing information");
-
-            var caHost = ChargeAfterHelper.GetCaHostByUseProduction(_settings.UseProduction);
-            var billingAddress = _addressService.GetAddressById((int)customer.BillingAddressId);
-
-            var shippingAddress = billingAddress;
-            if (customer.ShippingAddressId != null)
-                shippingAddress = _addressService.GetAddressById((int)customer.ShippingAddressId);
-
-            if (billingAddress.StateProvinceId == null || shippingAddress.StateProvinceId == null)
-                throw new NopException("Invalid customer billing or shipping addresses");
-
-            var billingAddressState = _stateProvinceService.GetStateProvinceById((int)billingAddress.StateProvinceId);
-            var shippingAddressState = _stateProvinceService.GetStateProvinceById((int)shippingAddress.StateProvinceId);
-
-            // Checkout UI Data
-            var checkoutUiData = new ChargeAfterCheckoutUI
-            {
-                FirstName = billingAddress.FirstName,
-                LastName = billingAddress.LastName,
-                Email = billingAddress.Email,
-                Phone = billingAddress.PhoneNumber,
-
-                BillingAddressLine1 = billingAddress.Address1,
-                BillingAddressLine2 = billingAddress.Address2,
-                BillingAddressCity = billingAddress.City,
-                BillingAddressZipCode = billingAddress.ZipPostalCode,
-                BillingAddressState = billingAddressState.Abbreviation,
-
-                ShippingAddressLine1 = shippingAddress.Address1,
-                ShippingAddressLine2 = shippingAddress.Address2,
-                ShippingAddressCity = shippingAddress.City,
-                ShippingAddressZipCode = shippingAddress.ZipPostalCode,
-                ShippingAddressState = shippingAddressState.Abbreviation,
-            };
-
+            var checkoutUiData = await GetCheckoutUiDataAsync(customer);
             var model = new CheckoutModel { ChargeAfterCheckoutUI = checkoutUiData };
             
             // items
-            var shoppingCartItems = _shoppingCartService.GetShoppingCart(customer, ShoppingCartType.ShoppingCart, _storeContext.CurrentStore.Id);
+            var shoppingCartItems = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, currentStore.Id);
             if (!shoppingCartItems.Any())
-            {
                 throw new NopException("Cart is empty. Please try again");
-            }
+            
+            var workingCurrency = await _workContext.GetWorkingCurrencyAsync();
 
             foreach (var sci in shoppingCartItems)
             {
-                var product = _productService.GetProductById(sci.ProductId);
+                var product = await _productService.GetProductByIdAsync(sci.ProductId);
 
                 // sub total
-                var cartItemSubTotalWithDiscountBase = _taxService.GetProductPrice(
-                    product, 
-                    _shoppingCartService.GetSubTotal(sci, true, out var shoppingCartItemDiscountBase, out _, out var maximumDiscountQty),
+                var (subTotal, shoppingCartItemDiscountBase, _, _) = await _shoppingCartService.GetSubTotalAsync(sci, true);
+
+                var (cartItemSubTotalWithDiscountBase, _) = await _taxService.GetProductPriceAsync(
+                    product,
+                    subTotal,
                     includingTax: false,
-                    customer,
-                    out _
+                    customer
                 );
 
-                var cartItemSubTotalWithDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(cartItemSubTotalWithDiscountBase, _workContext.WorkingCurrency);
+                var cartItemSubTotalWithDiscount = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(
+                    cartItemSubTotalWithDiscountBase,
+                    workingCurrency
+                );
 
                 // cart item
-                var productName = _localizationService.GetLocalized(product, x => x.Name);
-                var productSku = _productService.FormatSku(product, sci.AttributesXml);
+                var productName = await _localizationService.GetLocalizedAsync(product, x => x.Name);
+                var productSku = await _productService.FormatSkuAsync(product, sci.AttributesXml);
 
                 var itemModel = new CheckoutModel.CheckoutItemModel
                 {
@@ -189,10 +155,10 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                     Name = productName,
                     Quantity = sci.Quantity,
                     UnitPrice = cartItemSubTotalWithDiscount/sci.Quantity,
-                    Leasable = _productAttributeService.GetNonLeasableAttributeValue(product) == false
+                    Leasable = await _productAttributeService.GetNonLeasableAttributeValueAsync(product) == false
                 };
 
-                var warranty = _productAttributeService.GetWarrantyAttributeValue(product);
+                var warranty = await _productAttributeService.GetWarrantyAttributeValueAsync(product);
                 if (warranty)
                 {
                     itemModel.Warranty = new CheckoutModel.CheckoutItemModel.WarrantyItemModel
@@ -207,32 +173,28 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             }
 
             // checkout items
-            var checkoutAttributesXml = _genericAttributeService.GetAttribute<string>(
+            var checkoutAttributesXml = await _genericAttributeService.GetAttributeAsync<string>(
                 customer,
                 NopCustomerDefaults.CheckoutAttributes,
-                _storeContext.CurrentStore.Id
+                currentStore.Id
             );
+            checkoutAttributesXml = await _checkoutAttributeParser.EnsureOnlyActiveAttributesAsync(checkoutAttributesXml, shoppingCartItems);
 
-            checkoutAttributesXml = _checkoutAttributeParser.EnsureOnlyActiveAttributes(checkoutAttributesXml, shoppingCartItems);
-
-            var attributes = _checkoutAttributeParser.ParseCheckoutAttributes(checkoutAttributesXml);
+            var attributes = await _checkoutAttributeParser.ParseCheckoutAttributesAsync(checkoutAttributesXml);
             for (var i = 0; i < attributes.Count; i++)
             {
                 var attribute = attributes[i];
                 var valuesStr = _checkoutAttributeParser.ParseValues(checkoutAttributesXml, attribute.Id);
-
                 for (var j = 0; j < valuesStr.Count; j++)
                 {
                     var valueStr = valuesStr[j];
-
                     if (int.TryParse(valueStr, out var attributeValueId))
                     {
-                        var attributeValue = _checkoutAttributeService.GetCheckoutAttributeValueById(attributeValueId);
-
+                        var attributeValue = await _checkoutAttributeService.GetCheckoutAttributeValueByIdAsync(attributeValueId);
                         if (attributeValue != null)
                         {
-                            var priceAdjustmentBase = _taxService.GetCheckoutAttributePrice(attribute, attributeValue, customer);
-                            var priceAdjustment = _currencyService.ConvertFromPrimaryStoreCurrency(priceAdjustmentBase, _workContext.WorkingCurrency);
+                            var priceAdjustmentBase = (await _taxService.GetCheckoutAttributePriceAsync(attribute, attributeValue, customer)).price;
+                            var priceAdjustment = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(priceAdjustmentBase, await _workContext.GetWorkingCurrencyAsync());
 
                             if (priceAdjustmentBase > 0)
                             {
@@ -240,12 +202,11 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                                 var itemModel = new CheckoutModel.CheckoutItemModel
                                 {
                                     Sku = string.Format("checkout_attr_{0}", attribute.Id),
-                                    Name = _localizationService.GetLocalized(attribute, a => a.Name),
+                                    Name = await _localizationService.GetLocalizedAsync(attribute, a => a.Name),
                                     Quantity = 1,
                                     UnitPrice = priceAdjustment,
                                     Leasable = true
                                 };
-
                                 model.Items.Add(itemModel);
                             }
                         }
@@ -254,46 +215,48 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             }
 
             // sub total
-            var subTotalIncludingTax = _workContext.TaxDisplayType == TaxDisplayType.IncludingTax && !_taxSettings.ForceTaxExclusionFromOrderSubtotal;
-            _orderTotalCalculationService.GetShoppingCartSubTotal(shoppingCartItems, false, out var orderSubTotalDiscountAmountBase, out var _, out var subTotalWithoutDiscountBase, out var _);
+            var (_, _, subTotalWithoutDiscountBase, _, _) = await _orderTotalCalculationService.GetShoppingCartSubTotalAsync(
+                shoppingCartItems, 
+                includingTax: false
+            );
 
             // total
-            var shoppingCartTotalBase = _orderTotalCalculationService.GetShoppingCartTotal(shoppingCartItems, out var orderTotalDiscountAmountBase, out var appliedDiscounts, out var appliedGiftCards, out var redeemedRewardPoints, out var redeemedRewardPointsAmount);
-            if (!shoppingCartTotalBase.HasValue)
-            {
+            var (shoppingCartTotalBase, 
+                orderTotalDiscountAmountBase, 
+                appliedDiscounts, 
+                appliedGiftCards, 
+                redeemedRewardPoints, 
+                redeemedRewardPointsAmount) = await _orderTotalCalculationService.GetShoppingCartTotalAsync(shoppingCartItems);
+            
+            if (shoppingCartTotalBase == null)
                 throw new NopException("Failed to get total amount");
+            
+            model.TotalAmount = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(
+                (decimal)shoppingCartTotalBase, 
+                workingCurrency
+            );
+            
+            // shipping total
+            var (shippingExclTax, _, _) = await _orderTotalCalculationService.GetShoppingCartShippingTotalAsync(shoppingCartItems, includingTax: false);
+            var (shippingInclTax, _, _) = await _orderTotalCalculationService.GetShoppingCartShippingTotalAsync(shoppingCartItems, includingTax: true);
+
+            decimal shippingTax = 0;
+            if (shippingInclTax.HasValue && shippingExclTax.HasValue)
+            {
+                shippingTax = shippingInclTax.Value - shippingExclTax.Value;
             }
 
-            model.TotalAmount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartTotalBase.Value, _workContext.WorkingCurrency);
             model.TotalShippingAmount = 0;
-
-            // shipping total
-            decimal? shippingExclTax = _orderTotalCalculationService.GetShoppingCartShippingTotal(shoppingCartItems, false);
-            decimal? shippingInclTax = _orderTotalCalculationService.GetShoppingCartShippingTotal(shoppingCartItems, true);
-            
-            var shippingTax = shippingInclTax.Value - shippingExclTax.Value;
-
             if (shippingExclTax.HasValue)
             {
-                model.TotalShippingAmount = _currencyService.ConvertFromPrimaryStoreCurrency(shippingExclTax.Value, _workContext.WorkingCurrency);
+                model.TotalShippingAmount = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(shippingExclTax.Value, workingCurrency);
             }
 
-            //var shoppingCartShippingBase = _orderTotalCalculationService.GetShoppingCartShippingTotal(shoppingCartItems, false);
-            //if (shoppingCartShippingBase.HasValue)
-            //{
-            //    model.TotalShippingAmount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartShippingBase.Value, _workContext.WorkingCurrency);
-            //}
-
-            var shoppingCartTaxBase = _orderTotalCalculationService.GetTaxTotal(shoppingCartItems, out var taxRates);
-            model.TotalTaxAmount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartTaxBase, _workContext.WorkingCurrency);
+            var (shoppingCartTaxBase, taxRates) = await _orderTotalCalculationService.GetTaxTotalAsync(shoppingCartItems);
+            model.TotalTaxAmount = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(shoppingCartTaxBase, workingCurrency);
 
             // discount amount
-            if (orderTotalDiscountAmountBase > decimal.Zero)
-            {
-                var orderTotalDiscountAmount = _currencyService.ConvertFromPrimaryStoreCurrency(orderTotalDiscountAmountBase, _workContext.WorkingCurrency);
-            }
-
-            if(appliedDiscounts != null) 
+            if (appliedDiscounts != null) 
             {
                 var orderTotalAmount = subTotalWithoutDiscountBase + model.TotalShippingAmount + shippingTax + model.TotalTaxAmount;
                 foreach (var discount in appliedDiscounts)
@@ -317,6 +280,44 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             }
 
             return model;
+        }
+
+        public async Task<ChargeAfterCheckoutUI> GetCheckoutUiDataAsync(Customer customer)
+        {
+            if (customer.BillingAddressId == null)
+                throw new NopException("Invalid customer billing information");
+
+            var billingAddress = await _addressService.GetAddressByIdAsync((int)customer.BillingAddressId);
+
+            var shippingAddress = billingAddress;
+            if (customer.ShippingAddressId != null)
+                shippingAddress = await _addressService.GetAddressByIdAsync((int)customer.ShippingAddressId);
+
+            if (billingAddress.StateProvinceId == null || shippingAddress.StateProvinceId == null)
+                throw new NopException("Invalid customer billing or shipping addresses");
+
+            var billingAddressState = await _stateProvinceService.GetStateProvinceByIdAsync((int)billingAddress.StateProvinceId);
+            var shippingAddressState = await _stateProvinceService.GetStateProvinceByIdAsync((int)shippingAddress.StateProvinceId);
+
+            return new ChargeAfterCheckoutUI
+            {
+                FirstName = billingAddress.FirstName,
+                LastName = billingAddress.LastName,
+                Email = billingAddress.Email,
+                Phone = billingAddress.PhoneNumber,
+
+                BillingAddressLine1 = billingAddress.Address1,
+                BillingAddressLine2 = billingAddress.Address2,
+                BillingAddressCity = billingAddress.City,
+                BillingAddressZipCode = billingAddress.ZipPostalCode,
+                BillingAddressState = billingAddressState.Abbreviation,
+
+                ShippingAddressLine1 = shippingAddress.Address1,
+                ShippingAddressLine2 = shippingAddress.Address2,
+                ShippingAddressCity = shippingAddress.City,
+                ShippingAddressZipCode = shippingAddress.ZipPostalCode,
+                ShippingAddressState = shippingAddressState.Abbreviation,
+            };
         }
 
         #endregion

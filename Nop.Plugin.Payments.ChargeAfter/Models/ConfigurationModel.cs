@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Models
 {
-    public class ConfigurationModel : BaseNopModel
+    public record ConfigurationModel : BaseNopModel
     {
         public int ActiveStoreScopeConfiguration { get; set; }
 
@@ -14,24 +14,20 @@ namespace Nop.Plugin.Payments.ChargeAfter.Models
         public bool UseProduction_OverrideForStore { get; set; }
 
         [NopResourceDisplayName("Plugins.Payments.ChargeAfter.Fields.ProductionPublicKey")]
-        [NoTrim]
         public string ProductionPublicKey { get; set; }
         public bool ProductionPublicKey_OverrideForStore { get; set; }
 
         [NopResourceDisplayName("Plugins.Payments.ChargeAfter.Fields.ProductionPrivateKey")]
         [DataType(DataType.Password)]
-        [NoTrim]
         public string ProductionPrivateKey { get; set; }
         public bool ProductionPrivateKey_OverrideForStore { get; set; }
 
         [NopResourceDisplayName("Plugins.Payments.ChargeAfter.Fields.SandboxPublicKey")]
-        [NoTrim]
         public string SandboxPublicKey { get; set; }
         public bool SandboxPublicKey_OverrideForStore { get; set; }
 
         [NopResourceDisplayName("Plugins.Payments.ChargeAfter.Fields.SandboxPrivateKey")]
         [DataType(DataType.Password)]
-        [NoTrim]
         public string SandboxPrivateKey { get; set; }
         public bool SandboxPrivateKey_OverrideForStore { get; set; }
 
@@ -63,7 +59,6 @@ namespace Nop.Plugin.Payments.ChargeAfter.Models
         public SelectList TypeLineOfCreditPromoValues { get; set; }
 
         [NopResourceDisplayName("Plugins.Payments.ChargeAfter.Fields.FinancingPageUrlLineOfCreditPromo")]
-        [NoTrim]
         public string FinancingPageUrlLineOfCreditPromo { get; set; }
         public bool FinancingPageUrlLineOfCreditPromo_OverrideForStore { get; set; }
 

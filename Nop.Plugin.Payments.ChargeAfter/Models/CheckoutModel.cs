@@ -1,11 +1,10 @@
-﻿using Nop.Core;
-using Nop.Plugin.Payments.ChargeAfter.Domain;
+﻿using Nop.Plugin.Payments.ChargeAfter.Domain;
 using Nop.Web.Framework.Models;
 using System.Collections.Generic;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Models
 {
-    public class CheckoutModel : BaseNopModel
+    public record CheckoutModel : BaseNopModel
     {
         public CheckoutModel()
         {
@@ -33,11 +32,9 @@ namespace Nop.Plugin.Payments.ChargeAfter.Models
 
         public string OrderGuild { get; set; }
 
-        public bool AddressMismatch { get; set; }
-
         #region Nested Classes
 
-        public partial class CheckoutItemModel : BaseNopEntityModel
+        public partial record CheckoutItemModel : BaseNopEntityModel
         {
             public string Sku { get; set; }
 
@@ -53,7 +50,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Models
 
             public WarrantyItemModel Warranty { get; set; }
 
-            public partial class WarrantyItemModel
+            public partial record WarrantyItemModel
             {
                 public string Name { get; set; }
 
@@ -63,7 +60,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Models
             }
         }
 
-        public partial class CheckoutDiscountItemModel : BaseNopEntityModel
+        public partial record CheckoutDiscountItemModel : BaseNopEntityModel
         {
 
             public string Name { get; set; }

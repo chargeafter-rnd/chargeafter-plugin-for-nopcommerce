@@ -3,6 +3,7 @@ using Nop.Core;
 using Nop.Plugin.Payments.ChargeAfter.Services;
 using Nop.Services.Payments;
 using Nop.Web.Framework.Components;
+using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Components
 {
@@ -40,16 +41,18 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
 
         #region Methods 
 
-        public IViewComponentResult Invoke(string widgetZone, object additionalData)
+        public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object additionalData)
         {
-            if (!_paymentPluginManager.IsPluginActive(Defaults.SystemName, _workContext.CurrentCustomer, _storeContext.CurrentStore.Id))
+            if (!await _paymentPluginManager.IsPluginActiveAsync(Defaults.SystemName, 
+                                                                 await _workContext.GetCurrentCustomerAsync(), 
+                                                                 _storeContext.GetCurrentStore().Id))
                 return Content(string.Empty);
 
             var caPublicKey = ChargeAfterHelper.GetPublicKeyFromSettings(_settings);
             if (string.IsNullOrEmpty(caPublicKey))
                 return Content(string.Empty);
 
-            var model = _checkoutDataService.GetCheckoutData();
+            var model = await _checkoutDataService.GetCheckoutDataAsync();
             return View("~/Plugins/Payments.ChargeAfter/Views/Checkout/CheckoutScript.cshtml", model);
         }
 

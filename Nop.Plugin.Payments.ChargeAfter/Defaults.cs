@@ -26,7 +26,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
 
         public static string CheckoutFailedRoute => "Plugins/ChargeAfter/CheckoutFlowFailed";
 
-        public static string UserAgent => $"nopCommerce-{NopVersion.CurrentVersion}";
+        public static string UserAgent => $"nopCommerce-{NopVersion.CURRENT_VERSION}";
 
         public static string NonLeasableAttribute = "ChargeAfterNonLeasable";
 

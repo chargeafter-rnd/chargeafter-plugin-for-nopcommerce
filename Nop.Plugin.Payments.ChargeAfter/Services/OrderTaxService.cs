@@ -9,7 +9,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
 {
     public interface IOrderTaxService
     {
-        public void UpdateTaxFree(int orderId);
+        public Task UpdateTaxFreeAsync(int orderId);
     }
 
     public class OrderTaxService : IOrderTaxService
@@ -40,25 +40,25 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
 
         #region Methods
 
-        public void UpdateTaxFree(int orderId)
+        public async Task UpdateTaxFreeAsync(int orderId)
         {
-            var order = _orderService.GetOrderById(orderId)
+            var order = await _orderService.GetOrderByIdAsync(orderId)
                 ?? throw new Exception(string.Format("Invalid order data (Order Id {0})", orderId));
 
             // Update order
-            UpdateOrderTax(order);
+            await UpdateOrderTaxAsync(order);
 
             // Update order items
-            UpdateOrderItemsTax(order);
+            await UpdateOrderItemsTaxAsync(order);
 
             //add a note
-            AddNoteEditOrderTax(order);
+            await AddNoteEditOrderTaxAsync(order);
 
             //log update
-            LogEditOrder(order);
+            await LogEditOrderAsync(order);
         }
 
-        private void UpdateOrderTax(Order order)
+        private async Task UpdateOrderTaxAsync(Order order)
         {
             // Order sub total
             order.OrderSubtotalInclTax = order.OrderSubtotalExclTax;
@@ -78,12 +78,12 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             // Order Tax Display
             order.CustomerTaxDisplayType = Nop.Core.Domain.Tax.TaxDisplayType.ExcludingTax;
 
-            _orderService.UpdateOrder(order);
+            await _orderService.UpdateOrderAsync(order);
         }
 
-        private void UpdateOrderItemsTax(Order order)
+        private async Task UpdateOrderItemsTaxAsync(Order order)
         {
-            var orderItems = _orderService.GetOrderItems(order.Id);
+            var orderItems = await _orderService.GetOrderItemsAsync(order.Id);
 
             foreach (var orderItem in orderItems)
             {
@@ -91,13 +91,13 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                 orderItem.UnitPriceInclTax = orderItem.UnitPriceExclTax;
                 orderItem.DiscountAmountInclTax = orderItem.DiscountAmountExclTax;
 
-                _orderService.UpdateOrderItem(orderItem);
+                await _orderService.UpdateOrderItemAsync(orderItem);
             }
         }
 
-        private void AddNoteEditOrderTax(Order order)
+        private async Task AddNoteEditOrderTaxAsync(Order order)
         {
-            _orderService.InsertOrderNote(new OrderNote
+            await _orderService.InsertOrderNoteAsync(new OrderNote
             {
                 OrderId = order.Id,
                 Note = "Order tax have been edited",
@@ -106,10 +106,10 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             });
         }
 
-        private void LogEditOrder(Order order)
+        private async Task LogEditOrderAsync(Order order)
         {
-            _customerActivityService.InsertActivity("EditOrder",
-                string.Format(_localizationService.GetResource("ActivityLog.EditOrder"), order.CustomOrderNumber), order);
+            await _customerActivityService.InsertActivityAsync("EditOrder",
+                string.Format(await _localizationService.GetResourceAsync("ActivityLog.EditOrder"), order.CustomOrderNumber), order);
         }
 
         #endregion

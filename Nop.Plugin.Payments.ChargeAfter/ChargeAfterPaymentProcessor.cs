@@ -16,6 +16,7 @@ using Nop.Web.Framework.Infrastructure;
 using System;
 using System.Collections.Generic;
 using Nop.Plugin.Payments.ChargeAfter.Infrastructure;
+using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter 
 {
@@ -25,7 +26,6 @@ namespace Nop.Plugin.Payments.ChargeAfter
 
         private readonly ChargeAfterPaymentSettings _chargeAfterPaymentSettings;
         private readonly ILocalizationService _localizationService;
-        private readonly IPaymentService _paymentService;
         private readonly IWebHelper _webHelper;
         private readonly ISettingService _settingService;
         private readonly IAddressService _addressService;
@@ -43,7 +43,6 @@ namespace Nop.Plugin.Payments.ChargeAfter
         public ChargeAfterPaymentProcessor(
             ChargeAfterPaymentSettings chargeAfterPaymentSettings,
             ILocalizationService localizationService,
-            IPaymentService paymentService,
             IWebHelper webHelper,
             ISettingService settingService,
             IAddressService addressService,
@@ -56,7 +55,6 @@ namespace Nop.Plugin.Payments.ChargeAfter
         ) {
             _chargeAfterPaymentSettings = chargeAfterPaymentSettings;
             _localizationService = localizationService;
-            _paymentService = paymentService;
             _addressService = addressService;
             _webHelper = webHelper;
             _settingService = settingService;
@@ -72,7 +70,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
 
         #region Methods
 
-        public ProcessPaymentResult ProcessPayment(ProcessPaymentRequest processPaymentRequest)
+        public Task<ProcessPaymentResult> ProcessPaymentAsync(ProcessPaymentRequest processPaymentRequest)
         {
             var result = new ProcessPaymentResult();
 
@@ -99,16 +97,16 @@ namespace Nop.Plugin.Payments.ChargeAfter
                 result.AddError(ex.Message);
             }
 
-            return result;
+            return Task.FromResult(result);
         }
 
-        public void PostProcessPayment(PostProcessPaymentRequest postProcessPaymentRequest)
+        public async Task PostProcessPaymentAsync(PostProcessPaymentRequest postProcessPaymentRequest)
         {
             if (!string.IsNullOrEmpty(postProcessPaymentRequest.Order.AuthorizationTransactionId))
             {
                 var chargeId = postProcessPaymentRequest.Order.AuthorizationTransactionId;
+                
                 var order = postProcessPaymentRequest.Order as Order;
-
                 if (order == null)
                 {
                     throw new NopException("Invalid order data");
@@ -128,32 +126,32 @@ namespace Nop.Plugin.Payments.ChargeAfter
                     var orderTax = order.OrderTax;
                     if (orderTax > 0 && (chargeTotal + order.OrderTax == order.OrderTotal))
                     {
-                        _orderTaxService.UpdateTaxFree(order.Id);
+                        await _orderTaxService.UpdateTaxFreeAsync(order.Id);
                     }
                 }
 
                 // Auto capture
                 if (_chargeAfterPaymentSettings.UseAutoCapture)
                 {
-                    _orderSaleService.Capture(order.Id);
+                    await _orderSaleService.CaptureAsync(order.Id);
                 }
             }
         }
 
-        public bool HidePaymentMethod(IList<ShoppingCartItem> cart)
+        public async Task<bool> HidePaymentMethodAsync(IList<ShoppingCartItem> cart)
         {
-            var customer = _workContext.CurrentCustomer;
+            var customer = await _workContext.GetCurrentCustomerAsync();
             
             bool allowCountry = false; 
             bool allowSettings = false;
           
             if(customer != null && customer.BillingAddressId.HasValue)
             {
-                var billingAddress = _addressService.GetAddressById((int)customer.BillingAddressId);
+                var billingAddress = await _addressService.GetAddressByIdAsync((int)customer.BillingAddressId);
                 
                 if (billingAddress != null && billingAddress.CountryId.HasValue)
                 {
-                    var country = _countryService.GetCountryById((int)billingAddress.CountryId);
+                    var country = await _countryService.GetCountryByIdAsync((int)billingAddress.CountryId);
 
                     if(country != null && country.ThreeLetterIsoCode == "USA")
                     {
@@ -171,55 +169,54 @@ namespace Nop.Plugin.Payments.ChargeAfter
             return !(allowCountry && allowSettings);
         }
 
-        public decimal GetAdditionalHandlingFee(IList<ShoppingCartItem> cart)
+        public Task<decimal> GetAdditionalHandlingFeeAsync(IList<ShoppingCartItem> cart)
         {
-            return _paymentService.CalculateAdditionalFee(cart,
-                _chargeAfterPaymentSettings.AdditionalFee, _chargeAfterPaymentSettings.AdditionalFeePercentage);
+            return Task.FromResult(decimal.Zero);
         }
 
-        public CapturePaymentResult Capture(CapturePaymentRequest capturePaymentRequest)
+        public Task<CapturePaymentResult> CaptureAsync(CapturePaymentRequest capturePaymentRequest)
         {
             if(string.IsNullOrEmpty(capturePaymentRequest.Order.AuthorizationTransactionId))
-                return new CapturePaymentResult { Errors = new[] { "Failed to get the ChargeAfter Charge" } };
+                return Task.FromResult(new CapturePaymentResult { Errors = new[] { "Failed to get the ChargeAfter Charge" } });
 
             var chargeId = capturePaymentRequest.Order.AuthorizationTransactionId;
             
             var (response, error) = _serviceManager.GetChargeById(_chargeAfterPaymentSettings, chargeId);
             if (!string.IsNullOrEmpty(error))
-                return new CapturePaymentResult { Errors = new[] { "Failed to get the ChargeAfter Charge" } };
+                return Task.FromResult(new CapturePaymentResult { Errors = new[] { "Failed to get the ChargeAfter Charge" } });
 
             if(response.State != ChargeState.AUTHORIZED)
-                return new CapturePaymentResult { Errors = new[] { "Failed. Charge not authorized" } };
+                return Task.FromResult(new CapturePaymentResult { Errors = new[] { "Failed. Charge not authorized" } });
 
             var (capture_response, capture_error) = _serviceManager.Capture(_chargeAfterPaymentSettings, chargeId, response.TotalAmount);
             if (!string.IsNullOrEmpty(capture_error))
-                return new CapturePaymentResult { Errors = new[] { capture_error } };
+                return Task.FromResult(new CapturePaymentResult { Errors = new[] { capture_error } });
 
-            return new CapturePaymentResult 
+            return Task.FromResult(new CapturePaymentResult 
             {
                 CaptureTransactionId = response.ChargeId,
                 CaptureTransactionResult = ChargeState.SETTLED,
                 NewPaymentStatus = PaymentStatus.Paid
-            };
+            });
         }
 
-        public RefundPaymentResult Refund(RefundPaymentRequest refundPaymentRequest)
+        public Task<RefundPaymentResult> RefundAsync(RefundPaymentRequest refundPaymentRequest)
         {
             if (string.IsNullOrEmpty(refundPaymentRequest.Order.CaptureTransactionId))
-                return new RefundPaymentResult { Errors = new[] { "Charge not settled for refund" } };
+                return Task.FromResult(new RefundPaymentResult { Errors = new[] { "Charge not settled for refund" } });
 
             var chargeId = refundPaymentRequest.Order.CaptureTransactionId;
             var refundAmount = refundPaymentRequest.AmountToRefund;
 
             var (response, error) = _serviceManager.GetChargeById(_chargeAfterPaymentSettings, chargeId);
             if (!string.IsNullOrEmpty(error))
-                return new RefundPaymentResult { Errors = new[] { "Failed to get the ChargeAfter Charge" } };
+                return Task.FromResult(new RefundPaymentResult { Errors = new[] { "Failed to get the ChargeAfter Charge" } });
 
             if (response.State == ChargeState.REFUNDED)
-                return new RefundPaymentResult { Errors = new[] { "Refund error occured. Charge fully refunded" } };
+                return Task.FromResult(new RefundPaymentResult { Errors = new[] { "Refund error occured. Charge fully refunded" } });
 
             var availableToRefund = response.SettledAmount - response.RefundedAmount;
-            if (refundAmount > availableToRefund)
+            if(refundAmount > availableToRefund)
             {
                 refundAmount = availableToRefund;
             }
@@ -227,20 +224,20 @@ namespace Nop.Plugin.Payments.ChargeAfter
             if (refundAmount > 0) {
                 var (_, refund_error) = _serviceManager.Refund(_chargeAfterPaymentSettings, chargeId, refundAmount);
                 if (!string.IsNullOrEmpty(refund_error)) { 
-                    return new RefundPaymentResult { Errors = new[] { refund_error } };
+                    return Task.FromResult(new RefundPaymentResult { Errors = new[] { refund_error } });
                 }
             }
 
-            return new RefundPaymentResult
+            return Task.FromResult(new RefundPaymentResult
             {
                 NewPaymentStatus = refundPaymentRequest.IsPartialRefund ? PaymentStatus.PartiallyRefunded : PaymentStatus.Refunded
-            };
+            });
         }
 
-        public VoidPaymentResult Void(VoidPaymentRequest voidPaymentRequest)
+        public Task<VoidPaymentResult> VoidAsync(VoidPaymentRequest voidPaymentRequest)
         {
             if (string.IsNullOrEmpty(voidPaymentRequest.Order.AuthorizationTransactionId))
-                return new VoidPaymentResult { Errors = new[] { "Failed to get the ChargeAfter Charge" } };
+                return Task.FromResult(new VoidPaymentResult { Errors = new[] { "Failed to get the ChargeAfter Charge" } });
 
             var chargeId = voidPaymentRequest.Order.AuthorizationTransactionId;
             var result = new VoidPaymentResult 
@@ -250,59 +247,59 @@ namespace Nop.Plugin.Payments.ChargeAfter
 
             var (response, error) = _serviceManager.GetChargeById(_chargeAfterPaymentSettings, chargeId);
             if (!string.IsNullOrEmpty(error))
-                return new VoidPaymentResult { Errors = new[] { "Failed to get the ChargeAfter Charge" } };
+                return Task.FromResult(new VoidPaymentResult { Errors = new[] { "Failed to get the ChargeAfter Charge" } });
 
             if(response.State == ChargeState.AUTHORIZED)
             {
                 var (void_response, void_error) = _serviceManager.Void(_chargeAfterPaymentSettings, chargeId);
                 if (!string.IsNullOrEmpty(void_error))
-                    return new VoidPaymentResult { Errors = new[] { void_error } };
+                    return Task.FromResult(new VoidPaymentResult { Errors = new[] {void_error } });
 
-                return result;
+                return Task.FromResult(result);
             } 
             else if(response.State == ChargeState.SETTLED || response.State == ChargeState.PARTIALLY_REFUNDED)
             {
                 var amount = response.TotalAmount - response.RefundedAmount;
                 var (refund_response, refund_error) = _serviceManager.Refund(_chargeAfterPaymentSettings, chargeId, amount);
                 if (!string.IsNullOrEmpty(refund_error))
-                    return new VoidPaymentResult { Errors = new[] { refund_error } };
+                    return Task.FromResult(new VoidPaymentResult { Errors = new[] { refund_error } });
 
-                return result;
+                return Task.FromResult(result);
             }
 
-            return new VoidPaymentResult { Errors = new[] { "Void error occured" } };
+            return Task.FromResult(new VoidPaymentResult { Errors = new[] { "Void error occured" } });
         }
 
-        public ProcessPaymentResult ProcessRecurringPayment(ProcessPaymentRequest processPaymentRequest)
+        public Task<ProcessPaymentResult> ProcessRecurringPaymentAsync(ProcessPaymentRequest processPaymentRequest)
         {
-            return new ProcessPaymentResult { Errors = new[] { "Recurring payment not supported" } };
+            return Task.FromResult(new ProcessPaymentResult { Errors = new[] { "Recurring payment not supported" } });
         }
 
-        public CancelRecurringPaymentResult CancelRecurringPayment(CancelRecurringPaymentRequest cancelPaymentRequest)
+        public Task<CancelRecurringPaymentResult> CancelRecurringPaymentAsync(CancelRecurringPaymentRequest cancelPaymentRequest)
         {
-            return new CancelRecurringPaymentResult { Errors = new[] { "Recurring payment not supported" } };
+            return Task.FromResult(new CancelRecurringPaymentResult { Errors = new[] { "Recurring payment not supported" } });
         }
 
-        public bool CanRePostProcessPayment(Order order)
+        public Task<bool> CanRePostProcessPaymentAsync(Order order)
         {
             if (order == null)
                 throw new ArgumentNullException(nameof(order));
 
             //it's not a redirection payment method. So we always return false
-            return false;
+            return Task.FromResult(false);
         }
 
-        public IList<string> ValidatePaymentForm(IFormCollection form)
+        public Task<IList<string>> ValidatePaymentFormAsync(IFormCollection form)
         {
-            return new List<string>();
+            return Task.FromResult<IList<string>>(new List<string>());
         }
 
-        public ProcessPaymentRequest GetPaymentInfo(IFormCollection form)
+        public Task<ProcessPaymentRequest> GetPaymentInfoAsync(IFormCollection form)
         {
             if (form == null)
                 throw new ArgumentNullException(nameof(form));
 
-            return new ProcessPaymentRequest();
+            return Task.FromResult(new ProcessPaymentRequest());
         }
 
         public override string GetConfigurationPageUrl()
@@ -315,21 +312,26 @@ namespace Nop.Plugin.Payments.ChargeAfter
             return Defaults.PAYMENT_INFO_VIEW_COMPONENT_NAME;
         }
 
-        public override void Install()
+        public async Task<string> GetPaymentMethodDescriptionAsync()
+        {
+            return await _localizationService.GetResourceAsync("Plugins.Payment.ChargeAfter.PaymentMethodDescription");
+        }
+
+        public override async Task InstallAsync()
         {
             //settings
-            _settingService.SaveSetting(new ChargeAfterPaymentSettings {
+            await _settingService.SaveSettingAsync(new ChargeAfterPaymentSettings {
                 UseProduction = false
             });
 
             if (!_widgetSettings.ActiveWidgetSystemNames.Contains(Defaults.SystemName))
             {
                 _widgetSettings.ActiveWidgetSystemNames.Add(Defaults.SystemName);
-                _settingService.SaveSetting(_widgetSettings);
+                await _settingService.SaveSettingAsync(_widgetSettings);
             }
 
             //locales
-            _localizationService.AddPluginLocaleResource(new Dictionary<string, string>
+            await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
             {
                 ["Plugins.Payment.ChargeAfter.PaymentMethodDescription"] = ".",
 
@@ -374,7 +376,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
                 ["Plugins.Payments.ChargeAfter.Fields.TypeLineOfCreditPromo"] = "Promotional widget Type",
                 ["Plugins.Payments.ChargeAfter.Fields.TypeLineOfCreditPromo.Hint"] = "You can choose one of widget types to display the financial offer available.",
                 ["Plugins.Payments.ChargeAfter.Fields.FinancingPageUrlLineOfCreditPromo"] = "Financing page Url",
-                ["Plugins.Payments.ChargeAfter.Fields.FinancingPageUrlLineOfCreditPromo.Hint"] = "The financing page URL is used to notify the user of more detailed funding information.  Link must be absolute.",
+                ["Plugins.Payments.ChargeAfter.Fields.FinancingPageUrlLineOfCreditPromo.Hint"] = "The financing page URL is used to notify the user of more detailed funding information. Link must be absolute.",
                 ["Plugins.Payments.ChargeAfter.Fields.FinancingPageUrlLineOfCreditPromo.Required"] = "The financing page URL is required.",
 
                 ["Plugins.Payments.ChargeAfter.Fields.EnableSimplePromoBeforeContent"] = "Enable promotional widget before content",
@@ -412,28 +414,28 @@ namespace Nop.Plugin.Payments.ChargeAfter
                 ["Plugins.Payments.ChargeAfter.Customer.Checkout.Token"] = "ChargeAfter Confirmation Token",
             });
 
-            base.Install();
+            await base.InstallAsync();
         }
 
-        public override void Uninstall()
+        public override async Task UninstallAsync()
         {
             //settings
             if (_widgetSettings.ActiveWidgetSystemNames.Contains(Defaults.SystemName))
             {
                 _widgetSettings.ActiveWidgetSystemNames.Remove(Defaults.SystemName);
-                _settingService.SaveSetting(_widgetSettings);
+                await _settingService.SaveSettingAsync(_widgetSettings);
             }
-            _settingService.DeleteSetting<ChargeAfterPaymentSettings>();
+            await _settingService.DeleteSettingAsync<ChargeAfterPaymentSettings>();
 
             //locales
-            _localizationService.DeletePluginLocaleResources("Plugins.Payments.ChargeAfter");
+            await _localizationService.DeleteLocaleResourcesAsync("Plugins.Payments.ChargeAfter");
 
-            base.Uninstall();
+            await base.UninstallAsync();
         }
 
-        public IList<string> GetWidgetZones()
+        public Task<IList<string>> GetWidgetZonesAsync()
         {
-            return new List<string>
+            return Task.FromResult<IList<string>>(new List<string>
             {
                 /** Public zones **/
                 PublicWidgetZones.Footer,
@@ -447,7 +449,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
                 /** Admin zones **/
                 AdminWidgetZones.OrderDetailsButtons,
                 AdminWidgetZones.ProductDetailsBlock
-            };
+            });
         }
 
         public string GetWidgetViewComponentName(string widgetZone)
@@ -460,7 +462,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
                 return Defaults.ADMIN_ORDER_VIEW_COMPONENT_NAME;
             }
 
-            if(widgetZone.Equals(AdminWidgetZones.ProductDetailsBlock))
+            if (widgetZone.Equals(AdminWidgetZones.ProductDetailsBlock))
             {
                 return Defaults.ADMIN_PRODUCT_VIEW_COMPONENT_NAME;
             }
@@ -490,9 +492,9 @@ namespace Nop.Plugin.Payments.ChargeAfter
 
         public bool SupportCapture => true;
 
-        public bool SupportPartiallyRefund => true;
-
         public bool SupportRefund => true;
+
+        public bool SupportPartiallyRefund => true;
 
         public bool SupportVoid => true;
 
@@ -501,8 +503,6 @@ namespace Nop.Plugin.Payments.ChargeAfter
         public PaymentMethodType PaymentMethodType => PaymentMethodType.Standard;
 
         public bool SkipPaymentInfo => false;
-
-        public string PaymentMethodDescription => _localizationService.GetResource("Plugins.Payment.ChargeAfter.PaymentMethodDescription");
 
         public bool HideInWidgetList => false;
 

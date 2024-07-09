@@ -3,7 +3,7 @@ using Nop.Web.Framework.Models;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Models
 {
-    public class IpnModel : BaseNopModel
+    public record IpnModel : BaseNopModel
     {
         public FormCollection Form { get; set; }
     }

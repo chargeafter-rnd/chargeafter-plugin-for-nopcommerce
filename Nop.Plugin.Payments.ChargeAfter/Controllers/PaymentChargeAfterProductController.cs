@@ -21,6 +21,7 @@ using Nop.Web.Areas.Admin.Controllers;
 using Nop.Web.Areas.Admin.Factories;
 using Nop.Web.Areas.Admin.Models.Catalog;
 using System;
+using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
 {
@@ -46,7 +47,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
             IDownloadService downloadService, 
             IExportManager exportManager, 
             IImportManager importManager, 
-            ILanguageService languageService, 
+            ILanguageService languageService,
             ILocalizationService localizationService, 
             ILocalizedEntityService localizedEntityService, 
             IManufacturerService manufacturerService, 
@@ -57,6 +58,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
             IPictureService pictureService, 
             IProductAttributeParser productAttributeParser, 
             IProductAttributeService productAttributeService, 
+            IProductAttributeFormatter productAttributeFormatter, 
             IProductModelFactory productModelFactory, 
             IProductService productService, 
             IProductTagService productTagService, 
@@ -66,41 +68,44 @@ namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
             ISpecificationAttributeService specificationAttributeService, 
             IStoreContext storeContext, 
             IUrlRecordService urlRecordService, 
+            IGenericAttributeService genericAttributeService, 
             IWorkContext workContext, 
             VendorSettings vendorSettings,
-            ICustomProductAttributeService customProductAttributeService
-        ) : base(aclService,
-                 backInStockSubscriptionService,
-                 categoryService,
-                 copyProductService,
-                 customerActivityService,
-                 customerService,
-                 discountService,
-                 downloadService,
-                 exportManager,
-                 importManager,
-                 languageService,
-                 localizationService,
-                 localizedEntityService,
-                 manufacturerService,
-                 fileProvider,
-                 notificationService,
-                 pdfService,
-                 permissionService,
-                 pictureService,
-                 productAttributeParser,
-                 productAttributeService,
-                 productModelFactory,
-                 productService,
-                 productTagService,
-                 settingService,
-                 shippingService,
-                 shoppingCartService,
-                 specificationAttributeService,
-                 storeContext,
-                 urlRecordService,
-                 workContext,
-                 vendorSettings)
+            ICustomProductAttributeService customProductAttributeService) : base(
+                aclService,
+                backInStockSubscriptionService,
+                categoryService,
+                copyProductService,
+                customerActivityService,
+                customerService,
+                discountService,
+                downloadService,
+                exportManager,
+                importManager,
+                languageService,
+                localizationService,
+                localizedEntityService,
+                manufacturerService,
+                fileProvider,
+                notificationService,
+                pdfService,
+                permissionService,
+                pictureService,
+                productAttributeParser,
+                productAttributeService,
+                productAttributeFormatter,
+                productModelFactory,
+                productService,
+                productTagService,
+                settingService,
+                shippingService,
+                shoppingCartService,
+                specificationAttributeService,
+                storeContext,
+                urlRecordService,
+                genericAttributeService,
+                workContext,
+                vendorSettings)
         {
             _productService = productService;
             _customProductAttributeService = customProductAttributeService;
@@ -110,22 +115,22 @@ namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
 
         #region Method
 
-        public override IActionResult Edit(ProductModel model, bool continueEditing)
+        public override async Task<IActionResult> Edit(ProductModel model, bool continueEditing)
         {
-            var action = base.Edit(model, continueEditing);
+            var action = await base.Edit(model, continueEditing);
 
-            if(ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-                var product = _productService.GetProductById(model.Id);
+                var product = await _productService.GetProductByIdAsync(model.Id);
 
                 if (HttpContext.Request.Form.TryGetValue("CaNonLeasable", out var nonLeasableValues))
                 {
-                    _customProductAttributeService.SetNonLeasableAttributeValue(product, Convert.ToBoolean(nonLeasableValues[0]));
+                    await _customProductAttributeService.SetNonLeasableAttributeValueAsync(product, Convert.ToBoolean(nonLeasableValues[0]));
                 }
 
                 if (HttpContext.Request.Form.TryGetValue("CaWarranty", out var warrantyValues))
                 {
-                     _customProductAttributeService.SetWarrantyAttributeValue(product, Convert.ToBoolean(warrantyValues[0]));
+                    await _customProductAttributeService.SetWarrantyAttributeValueAsync(product, Convert.ToBoolean(warrantyValues[0]));
                 }
             }
 

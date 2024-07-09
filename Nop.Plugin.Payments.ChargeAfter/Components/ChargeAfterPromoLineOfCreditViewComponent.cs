@@ -6,6 +6,7 @@ using Nop.Services.Cms;
 using Nop.Web.Framework.Components;
 using Nop.Web.Framework.Infrastructure;
 using Nop.Web.Models.Catalog;
+using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Components
 {
@@ -43,9 +44,11 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
 
         #region Methods
 
-        public IViewComponentResult Invoke(string widgetZone, object additionalData)
+        public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object additionalData)
         {
-            if (!_widgetPluginManager.IsPluginActive(Defaults.SystemName, _workContext.CurrentCustomer, _storeContext.CurrentStore.Id))
+            if (!await _widgetPluginManager.IsPluginActiveAsync(Defaults.SystemName,
+                                                                await _workContext.GetCurrentCustomerAsync(), 
+                                                                _storeContext.GetCurrentStore().Id))
                 return Content(string.Empty);
 
             if (string.IsNullOrEmpty(ChargeAfterHelper.GetPublicKeyFromSettings(_settings)) || !_settings.EnableLineOfCreditPromo)
@@ -59,7 +62,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
             if (productId == 0)
                 return Content(string.Empty);
 
-            var product = _productService.GetProductById(productId);
+            var product = await _productService.GetProductByIdAsync(productId);
             if(product == null || string.IsNullOrEmpty(product.Sku) || product.Price == 0 || product.IsRental)
                 return Content(string.Empty);
 

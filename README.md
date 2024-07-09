@@ -30,6 +30,6 @@ One platform, multiple lenders. One application, 85% approvals!
 
 ## Installation instructions
 
-NopCommerce Supported versions: 4.20, 4.30
+NopCommerce Supported versions: 4.50
 
 See the manual for information on [how to install the plugin](https://docs.chargeafter.com/docs/nopcommerce-installation).

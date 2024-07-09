@@ -12,6 +12,7 @@ using Nop.Core.Domain.Orders;
 using System.Linq;
 using Nop.Core.Domain.Customers;
 using Nop.Services.Common;
+using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Controllers
 {
@@ -47,8 +48,8 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
             _webHelper = webHelper;
             _shoppingCartService = shoppingCartService;
             _orderProcessingService = orderProcessingService;
-            _genericAttributeService = genericAttributeService;
             _paymentService = paymentService;
+            _genericAttributeService = genericAttributeService;
             _storeContext = storeContext;
             _workContext = workContext;
             _logger = logger;
@@ -60,7 +61,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
 
         [HttpPost]
         [IgnoreAntiforgeryToken]
-        public IActionResult Place(IFormCollection form)
+        public async Task<IActionResult> PlaceAsync(IFormCollection form)
         {
             try {
                 var confirmationToken = GetValue("ca_token", form).ToString();
@@ -69,10 +70,10 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                     throw new NopException("Incorrect confirmation token");
                 }
 
-                var cart = _shoppingCartService.GetShoppingCart(
-                    _workContext.CurrentCustomer,
+                var cart = await _shoppingCartService.GetShoppingCartAsync(
+                    await _workContext.GetCurrentCustomerAsync(),
                     ShoppingCartType.ShoppingCart,
-                    _storeContext.CurrentStore.Id
+                    _storeContext.GetCurrentStore().Id
                 );
 
                 if (!cart.Any())
@@ -89,17 +90,20 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                 // Process Payment
                 _paymentService.GenerateOrderGuid(processPaymentRequest);
 
-                processPaymentRequest.StoreId = _storeContext.CurrentStore.Id;
-                processPaymentRequest.CustomerId = _workContext.CurrentCustomer.Id;
-                processPaymentRequest.PaymentMethodSystemName = _genericAttributeService.GetAttribute<string>(
-                    _workContext.CurrentCustomer,
+                var currentCustomer = await _workContext.GetCurrentCustomerAsync();
+                var currentStoreId = _storeContext.GetCurrentStore().Id;
+
+                processPaymentRequest.StoreId = currentStoreId;
+                processPaymentRequest.CustomerId = currentCustomer.Id;
+                processPaymentRequest.PaymentMethodSystemName = await _genericAttributeService.GetAttributeAsync<string>(
+                    currentCustomer,
                     NopCustomerDefaults.SelectedPaymentMethodAttribute,
-                    _storeContext.CurrentStore.Id
+                    currentStoreId
                 );
                 processPaymentRequest.CustomValues.Add(Constants.CA_TOKEN_KEY, confirmationToken);
 
                 HttpContext.Session.Set<ProcessPaymentRequest>("OrderPaymentInfo", processPaymentRequest);
-                var placeOrderResult = _orderProcessingService.PlaceOrder(processPaymentRequest);
+                var placeOrderResult = await _orderProcessingService.PlaceOrderAsync(processPaymentRequest);
 
                 // Post Process Payment
                 if (placeOrderResult.Success)
@@ -109,7 +113,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                     {
                         Order = placeOrderResult.PlacedOrder
                     };
-                    _paymentService.PostProcessPayment(postProcessPaymentRequest);
+                    await _paymentService.PostProcessPaymentAsync(postProcessPaymentRequest);
 
                     return Json(new { redirect = Url.RouteUrl("CheckoutCompleted", new { orderId = placeOrderResult.PlacedOrder.Id }) });
                 }
@@ -117,7 +121,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                 // Log errors
                 foreach (var error in placeOrderResult.Errors)
                 {
-                    _logger.Error("ChargeAfter Order Place Error", new NopException(error));
+                    await _logger.ErrorAsync("ChargeAfter Order Place Error", new NopException(error));
                 }
 
                 // Clear process payment request data

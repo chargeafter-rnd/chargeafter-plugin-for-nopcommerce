@@ -3,7 +3,7 @@ using Nop.Web.Framework.Mvc.ModelBinding;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Models
 {
-    public class ChargeAfterProductAttributeModel : BaseNopModel
+    public record ChargeAfterProductAttributeModel : BaseNopModel
     {
         public int ProductId { get; set; }
 

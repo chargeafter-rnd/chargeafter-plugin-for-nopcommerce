@@ -90,7 +90,7 @@
                 }
             });
     }
-
+    
     // Terms
     function submitCheckoutCA() {
         // Prevent submit if is not ChargeAfter
@@ -106,30 +106,30 @@
 
         var termOfServiceOk = true,
             termsOfService = $('#termsofservice');
-
+        
         if (termsOfService.length === 0) {
             termsOfService = $('#terms-of-service');
         }
-
+        
         if (termsOfService.length > 0 && !termsOfService.is(":hidden")) {
             if (!termsOfService.is(':checked')) {
                 var readTerms = $("#terms-of-service-warning-box");
-
+                
                 if (readTerms.length === 0) {
                     readTerms = $('#read-terms');
                 }
-
+                
                 readTerms.dialog();
                 termOfServiceOk = false;
             } else {
                 termOfServiceOk = true;
             }
         }
-
+        
         if (termOfServiceOk) {
             startCheckout();
         }
-
+        
         return false;
     }
 
@@ -146,8 +146,8 @@
         // Dom Ready
         $(document).ready(function () {
             $('.payment-info-next-step-button, .confirm-order-button')
-                .show().prop("onclick", null).unbind().click(submitCheckoutCA);
-
+                .show().prop("onclick", null).unbind().click(submitCheckoutCA);   
+            
             $('#checkoutForm').find('button[data-complete]')
                 .show().prop("onclick", null).unbind().click(submitCheckoutCA);
         });

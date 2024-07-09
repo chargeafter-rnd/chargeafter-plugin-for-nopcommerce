@@ -5,6 +5,7 @@ using Nop.Services.Payments;
 using Nop.Web.Areas.Admin.Models.Orders;
 using Nop.Web.Framework.Components;
 using Nop.Web.Framework.Infrastructure;
+using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Components
 {
@@ -38,9 +39,11 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
 
         #region Methods
 
-        public IViewComponentResult Invoke(string widgetZone, object additionalData)
+        public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object additionalData)
         {
-            if (!_paymentPluginManager.IsPluginActive(Defaults.SystemName, _workContext.CurrentCustomer, _storeContext.CurrentStore.Id))
+            if (!await _paymentPluginManager.IsPluginActiveAsync(Defaults.SystemName, 
+                                                                 await _workContext.GetCurrentCustomerAsync(), 
+                                                                 _storeContext.GetCurrentStore().Id))
                 return Content(string.Empty);
 
             //ensure that it's a proper widget zone
@@ -51,7 +54,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Components
             if (orderId == 0)
                 return Content(string.Empty);
 
-            var order = _orderService.GetOrderById(orderId);
+            var order = await _orderService.GetOrderByIdAsync(orderId);
             if (order == null || order.PaymentMethodSystemName == null || !order.PaymentMethodSystemName.Equals(Defaults.SystemName))
                 return Content(string.Empty);
 

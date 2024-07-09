@@ -2,7 +2,7 @@
 
 namespace Nop.Plugin.Payments.ChargeAfter.Models
 {
-    public class PaymentInfoModel : BaseNopModel
+    public record PaymentInfoModel : BaseNopModel
     {
         #region Properties
 
