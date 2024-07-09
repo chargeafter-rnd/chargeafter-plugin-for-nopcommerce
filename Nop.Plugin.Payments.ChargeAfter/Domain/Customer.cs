@@ -2,7 +2,7 @@
 
 namespace Nop.Plugin.Payments.ChargeAfter.Domain
 {
-    public class ChargeAfterCheckoutUI : BaseEntity
+    public class Customer : BaseEntity
     {
         public string FirstName { get; set; }
 

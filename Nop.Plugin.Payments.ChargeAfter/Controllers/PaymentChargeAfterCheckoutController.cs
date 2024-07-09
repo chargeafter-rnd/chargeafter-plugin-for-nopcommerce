@@ -81,14 +81,15 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                     throw new NopException("Your cart is empty");
                 }
 
-                var processPaymentRequest = HttpContext.Session.Get<ProcessPaymentRequest>(ProcessPaymentRequestKey);
+
+                var processPaymentRequest = await HttpContext.Session.GetAsync<ProcessPaymentRequest>(ProcessPaymentRequestKey);
                 if (processPaymentRequest == null)
                 {
                     processPaymentRequest = new ProcessPaymentRequest();
                 }
 
                 // Process Payment
-                _paymentService.GenerateOrderGuid(processPaymentRequest);
+                await _paymentService.GenerateOrderGuidAsync(processPaymentRequest);
 
                 var currentCustomer = await _workContext.GetCurrentCustomerAsync();
                 var currentStoreId = _storeContext.GetCurrentStore().Id;
@@ -102,13 +103,13 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                 );
                 processPaymentRequest.CustomValues.Add(Constants.CA_TOKEN_KEY, confirmationToken);
 
-                HttpContext.Session.Set<ProcessPaymentRequest>("OrderPaymentInfo", processPaymentRequest);
+                await HttpContext.Session.SetAsync<ProcessPaymentRequest>("OrderPaymentInfo", processPaymentRequest);
                 var placeOrderResult = await _orderProcessingService.PlaceOrderAsync(processPaymentRequest);
 
                 // Post Process Payment
                 if (placeOrderResult.Success)
                 {
-                    HttpContext.Session.Set<ProcessPaymentRequest>("OrderPaymentInfo", null);
+                    await HttpContext.Session.SetAsync<ProcessPaymentRequest>("OrderPaymentInfo", null);
                     var postProcessPaymentRequest = new PostProcessPaymentRequest
                     {
                         Order = placeOrderResult.PlacedOrder

@@ -12,7 +12,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Models
             DiscountItems = new List<CheckoutDiscountItemModel>();
         }
 
-        public ChargeAfterCheckoutUI ChargeAfterCheckoutUI { get; set; }
+        public Customer Customer { get; set; }
 
         public string CaPublicKey { get; set; }
 

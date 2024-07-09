@@ -4,23 +4,23 @@
     var startCheckout = function () {
         let caData = {
             consumerDetails: {
-                firstName: "@(Model.ChargeAfterCheckoutUI.FirstName)",
-                lastName: "@(Model.ChargeAfterCheckoutUI.LastName)",
-                email: "@(Model.ChargeAfterCheckoutUI.Email)",
-                mobilePhoneNumber: "@(Model.ChargeAfterCheckoutUI.Phone)",
+                firstName: "@(Model.Customer.FirstName)",
+                lastName: "@(Model.Customer.LastName)",
+                email: "@(Model.Customer.Email)",
+                mobilePhoneNumber: "@(Model.Customer.Phone)",
                 shippingAddress: {
-                    line1: "@(Model.ChargeAfterCheckoutUI.ShippingAddressLine1)",
-                    line2: "@(Model.ChargeAfterCheckoutUI.ShippingAddressLine2)",
-                    city: "@(Model.ChargeAfterCheckoutUI.ShippingAddressCity)",
-                    zipCode: "@(Model.ChargeAfterCheckoutUI.ShippingAddressZipCode)",
-                    state: "@(Model.ChargeAfterCheckoutUI.ShippingAddressState)"
+                    line1: "@(Model.Customer.ShippingAddressLine1)",
+                    line2: "@(Model.Customer.ShippingAddressLine2)",
+                    city: "@(Model.Customer.ShippingAddressCity)",
+                    zipCode: "@(Model.Customer.ShippingAddressZipCode)",
+                    state: "@(Model.Customer.ShippingAddressState)"
                 },
                 billingAddress: {
-                    line1: "@(Model.ChargeAfterCheckoutUI.BillingAddressLine1)",
-                    line2: "@(Model.ChargeAfterCheckoutUI.BillingAddressLine2)",
-                    city: "@(Model.ChargeAfterCheckoutUI.BillingAddressCity)",
-                    zipCode: "@(Model.ChargeAfterCheckoutUI.BillingAddressZipCode)",
-                    state: "@(Model.ChargeAfterCheckoutUI.BillingAddressState)"
+                    line1: "@(Model.Customer.BillingAddressLine1)",
+                    line2: "@(Model.Customer.BillingAddressLine2)",
+                    city: "@(Model.Customer.BillingAddressCity)",
+                    zipCode: "@(Model.Customer.BillingAddressZipCode)",
+                    state: "@(Model.Customer.BillingAddressState)"
                 }
             },
             cartDetails: {

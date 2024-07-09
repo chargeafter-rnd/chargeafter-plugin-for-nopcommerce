@@ -3,6 +3,7 @@ using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Orders;
 using Nop.Plugin.Payments.ChargeAfter.Domain;
 using Nop.Plugin.Payments.ChargeAfter.Models;
+using Nop.Services.Attributes;
 using Nop.Services.Catalog;
 using Nop.Services.Common;
 using Nop.Services.Directory;
@@ -43,8 +44,8 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
         private readonly ITaxService _taxService;
         private readonly IGenericAttributeService _genericAttributeService;
         private readonly ICustomProductAttributeService _productAttributeService;
-        private readonly ICheckoutAttributeParser _checkoutAttributeParser;
-        private readonly ICheckoutAttributeService _checkoutAttributeService;
+        private readonly IAttributeParser<CheckoutAttribute, CheckoutAttributeValue> _checkoutAttributeParser;
+        private readonly IAttributeService<CheckoutAttribute, CheckoutAttributeValue> _checkoutAttributeService;
 
         #endregion
 
@@ -66,8 +67,8 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             IGenericAttributeService genericAttributeService,
             IDiscountService discountService,
             ICustomProductAttributeService productAttributeService,
-            ICheckoutAttributeParser checkoutAttributeParser,
-            ICheckoutAttributeService checkoutAttributeService
+            IAttributeParser<CheckoutAttribute, CheckoutAttributeValue> checkoutAttributeParser,
+            IAttributeService<CheckoutAttribute, CheckoutAttributeValue> checkoutAttributeService
         )
         {
             _paymentPluginManager = paymentPluginManager;
@@ -98,8 +99,10 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             var customer = await _workContext.GetCurrentCustomerAsync();
             var currentStore = await _storeContext.GetCurrentStoreAsync();
 
-            if (!await _paymentPluginManager.IsPluginActiveAsync(Defaults.SystemName, customer, currentStore.Id))
+            if (!await _paymentPluginManager.IsPluginActiveAsync(Defaults.SystemName, customer, currentStore.Id)) 
+            {
                 throw new NopException("Unauthorized action");
+            }
             
             var paymentMethodSystemName = await _genericAttributeService.GetAttributeAsync<string>(
                 customer,
@@ -108,19 +111,27 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             );
 
             if (!paymentMethodSystemName.Equals(Defaults.SystemName))
+            {
                 throw new NopException("Unauthorized action");
+            }
             
             var caPublicKey = ChargeAfterHelper.GetPublicKeyFromSettings(_settings);
-            if (string.IsNullOrEmpty(caPublicKey))
+            if (string.IsNullOrEmpty(caPublicKey)) 
+            {
                 throw new NopException("Incorrect credentials");
+            }
 
-            var checkoutUiData = await GetCheckoutUiDataAsync(customer);
-            var model = new CheckoutModel { ChargeAfterCheckoutUI = checkoutUiData };
+            var customerData = await GetCheckoutUiDataAsync(customer);
+            var model = new CheckoutModel { 
+                Customer = customerData 
+            };
             
             // items
             var shoppingCartItems = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, currentStore.Id);
-            if (!shoppingCartItems.Any())
+            if (!shoppingCartItems.Any()) 
+            {
                 throw new NopException("Cart is empty. Please try again");
+            }
 
             var workingCurrency = await _workContext.GetWorkingCurrencyAsync();
 
@@ -129,7 +140,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                 var product = await _productService.GetProductByIdAsync(sci.ProductId);
 
                 // sub total
-                var (subTotal, shoppingCartItemDiscountBase, _, _) = await _shoppingCartService.GetSubTotalAsync(sci, true);
+                var (subTotal, _, _, _) = await _shoppingCartService.GetSubTotalAsync(sci, true);
 
                 var (cartItemSubTotalWithDiscountBase, _) = await _taxService.GetProductPriceAsync(
                     product,
@@ -180,8 +191,8 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             );
 
             checkoutAttributesXml = await _checkoutAttributeParser.EnsureOnlyActiveAttributesAsync(checkoutAttributesXml, shoppingCartItems);
-            
-            var attributes = await _checkoutAttributeParser.ParseCheckoutAttributesAsync(checkoutAttributesXml);
+
+            var attributes = await _checkoutAttributeParser.ParseAttributesAsync(checkoutAttributesXml);
             for (var i = 0; i < attributes.Count; i++)
             {
                 var attribute = attributes[i];
@@ -193,20 +204,20 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
 
                     if (int.TryParse(valueStr, out var attributeValueId))
                     {
-                        var attributeValue = await _checkoutAttributeService.GetCheckoutAttributeValueByIdAsync(attributeValueId);
+                        var attributeValue = await _checkoutAttributeService.GetAttributeValueByIdAsync(attributeValueId);
 
                         if (attributeValue != null)
                         {
-                            var priceAdjustmentBase = (await _taxService.GetCheckoutAttributePriceAsync(attribute, attributeValue, customer)).price;
+                            var (priceAdjustmentBase, _) = await _taxService.GetCheckoutAttributePriceAsync(attribute, attributeValue, customer);
                             var priceAdjustment = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(priceAdjustmentBase, await _workContext.GetWorkingCurrencyAsync());
-                            
+
                             if (priceAdjustmentBase > 0)
                             {
                                 // checkout item
                                 var itemModel = new CheckoutModel.CheckoutItemModel
                                 {
                                     Sku = string.Format("checkout_attr_{0}", attribute.Id),
-                                    Name = await _localizationService.GetLocalizedAsync(attribute, a => a.Name),
+                                    Name = await _localizationService.GetLocalizedAsync(attribute, x => x.Name),
                                     Quantity = 1,
                                     UnitPrice = priceAdjustment,
                                     Leasable = true
@@ -226,15 +237,11 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             );
 
             // total
-            var (shoppingCartTotalBase, 
-                orderTotalDiscountAmountBase, 
-                appliedDiscounts, 
-                appliedGiftCards, 
-                redeemedRewardPoints, 
-                redeemedRewardPointsAmount) = await _orderTotalCalculationService.GetShoppingCartTotalAsync(shoppingCartItems);
-            
+            var (shoppingCartTotalBase, orderTotalDiscountAmountBase, appliedDiscounts, _, _, _) = await _orderTotalCalculationService.GetShoppingCartTotalAsync(shoppingCartItems);
             if (shoppingCartTotalBase == null)
+            {
                 throw new NopException("Failed to get total amount");
+            }
             
             model.TotalAmount = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(
                 (decimal)shoppingCartTotalBase, 
@@ -287,10 +294,12 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             return model;
         }
 
-        public async Task<ChargeAfterCheckoutUI> GetCheckoutUiDataAsync(Customer customer)
+        private async Task<Domain.Customer> GetCheckoutUiDataAsync(Nop.Core.Domain.Customers.Customer customer)
         {
             if (customer.BillingAddressId == null)
+            {
                 throw new NopException("Invalid customer billing information");
+            }
 
             var caHost = ChargeAfterHelper.GetCaHostByUseProduction(_settings.UseProduction);
             var billingAddress = await _addressService.GetAddressByIdAsync((int)customer.BillingAddressId);
@@ -300,12 +309,14 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                 shippingAddress = await _addressService.GetAddressByIdAsync((int)customer.ShippingAddressId);
 
             if (billingAddress.StateProvinceId == null || shippingAddress.StateProvinceId == null)
+            {
                 throw new NopException("Invalid customer billing or shipping addresses");
+            }
 
             var billingAddressState = await _stateProvinceService.GetStateProvinceByIdAsync((int)billingAddress.StateProvinceId);
             var shippingAddressState = await _stateProvinceService.GetStateProvinceByIdAsync((int)shippingAddress.StateProvinceId);
 
-            return new ChargeAfterCheckoutUI
+            return new Domain.Customer
             {
                 FirstName = billingAddress.FirstName,
                 LastName = billingAddress.LastName,

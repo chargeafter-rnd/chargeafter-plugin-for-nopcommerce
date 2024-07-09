@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 namespace Nop.Plugin.Payments.ChargeAfter.Controllers
 {
     [AuthorizeAdmin]
-    [Area(AreaNames.Admin)]
+    [Area(AreaNames.ADMIN)]
     [AutoValidateAntiforgeryToken]
     public class PaymentChargeAfterController : BasePaymentController
     {
