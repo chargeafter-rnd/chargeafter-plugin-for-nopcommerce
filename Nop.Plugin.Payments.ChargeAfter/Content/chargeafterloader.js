@@ -30,7 +30,9 @@ class ChargeAfterLoader {
   }
 }
 
-const caLoader = new ChargeAfterLoader();
-caLoader.onLoad();
+if (!window.caloader) {
+  const caloader = new ChargeAfterLoader();
+  caloader.onLoad();
 
-window.caloader = caLoader;
+  window.caloader = caloader;
+}

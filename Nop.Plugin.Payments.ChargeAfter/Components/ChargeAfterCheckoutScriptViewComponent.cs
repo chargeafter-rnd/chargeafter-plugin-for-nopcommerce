@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Components
 {
-    [ViewComponent(Name = Defaults.CHECKOUT_SCRIPT_VIEW_COMPONENT_NAME)]
+    [ViewComponent(Name = "ChargeAfterCheckoutScript")]
     public class ChargeAfterCheckoutScriptViewComponent : NopViewComponent
     {
         #region Fields

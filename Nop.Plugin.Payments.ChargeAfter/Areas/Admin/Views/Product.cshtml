@@ -2,17 +2,17 @@
 
 @{
     const string hideChargeAfterBlockAttributeName = "ProductPage.HideChargeAfterBlock";
-
+    
     var customer = await workContext.GetCurrentCustomerAsync();
     var hideChargeAfterBlock = await genericAttributeService.GetAttributeAsync<bool>(customer, hideChargeAfterBlockAttributeName);
 }
 
 <nop-card asp-name="product-non-leasable"
-          asp-icon="fa fa-flag"
-          asp-title="@T("Plugins.Payments.ChargeAfter.Header.ProductAttr")"
-          asp-hide-block-attribute-name="@hideChargeAfterBlockAttributeName"
-          asp-hide="@hideChargeAfterBlock"
-          asp-advanced="false">
+           asp-icon="fa fa-flag"
+           asp-title="@T("Plugins.Payments.ChargeAfter.Header.ProductAttr")"
+           asp-hide-block-attribute-name="@hideChargeAfterBlockAttributeName"
+           asp-hide="@hideChargeAfterBlock"
+           asp-advanced="false">
     <div class="card-body">
         @if (Model.ProductId > 0)
         {

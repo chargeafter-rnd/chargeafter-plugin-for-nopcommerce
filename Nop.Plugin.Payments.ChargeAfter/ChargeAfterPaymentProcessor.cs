@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Nop.Core;
 using Nop.Core.Domain.Cms;
 using Nop.Core.Domain.Orders;
@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using Nop.Plugin.Payments.ChargeAfter.Infrastructure;
 using System.Threading.Tasks;
+using Nop.Plugin.Payments.ChargeAfter.Components;
 
 namespace Nop.Plugin.Payments.ChargeAfter 
 {
@@ -105,8 +106,8 @@ namespace Nop.Plugin.Payments.ChargeAfter
             if (!string.IsNullOrEmpty(postProcessPaymentRequest.Order.AuthorizationTransactionId))
             {
                 var chargeId = postProcessPaymentRequest.Order.AuthorizationTransactionId;
-                
                 var order = postProcessPaymentRequest.Order as Order;
+
                 if (order == null)
                 {
                     throw new NopException("Invalid order data");
@@ -216,7 +217,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
                 return Task.FromResult(new RefundPaymentResult { Errors = new[] { "Refund error occured. Charge fully refunded" } });
 
             var availableToRefund = response.SettledAmount - response.RefundedAmount;
-            if(refundAmount > availableToRefund)
+            if (refundAmount > availableToRefund)
             {
                 refundAmount = availableToRefund;
             }
@@ -253,7 +254,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
             {
                 var (void_response, void_error) = _serviceManager.Void(_chargeAfterPaymentSettings, chargeId);
                 if (!string.IsNullOrEmpty(void_error))
-                    return Task.FromResult(new VoidPaymentResult { Errors = new[] {void_error } });
+                    return Task.FromResult(new VoidPaymentResult { Errors = new[] { void_error } });
 
                 return Task.FromResult(result);
             } 
@@ -305,11 +306,6 @@ namespace Nop.Plugin.Payments.ChargeAfter
         public override string GetConfigurationPageUrl()
         {
             return $"{_webHelper.GetStoreLocation()}{Defaults.ConfigurationRouteName}";
-        }
-
-        public string GetPublicViewComponentName()
-        {
-            return Defaults.PAYMENT_INFO_VIEW_COMPONENT_NAME;
         }
 
         public async Task<string> GetPaymentMethodDescriptionAsync()
@@ -410,7 +406,7 @@ namespace Nop.Plugin.Payments.ChargeAfter
                 ["Plugins.Payments.ChargeAfter.Fields.Warranty.Hint"] = "Specifying whether a product has a warranty.",
 
                 ["Plugins.Payments.ChargeAfter.Fields.ProductAttr.SaveBeforeEdit"] = "You need to save the product before you can edit consumer financing attributes for this product.",
-
+                
                 ["Plugins.Payments.ChargeAfter.Customer.Checkout.Token"] = "ChargeAfter Confirmation Token",
             });
 
@@ -452,38 +448,43 @@ namespace Nop.Plugin.Payments.ChargeAfter
             });
         }
 
-        public string GetWidgetViewComponentName(string widgetZone)
+        public Type GetPublicViewComponent()
+        {
+            return typeof(ChargeAfterPaymentInfoViewComponent);
+        }
+
+        public Type GetWidgetViewComponent(string widgetZone)
         {
             if (widgetZone == null)
                 throw new ArgumentNullException(nameof(widgetZone));
 
-            if(widgetZone.Equals(AdminWidgetZones.OrderDetailsButtons))
+            if (widgetZone.Equals(AdminWidgetZones.OrderDetailsButtons))
             {
-                return Defaults.ADMIN_ORDER_VIEW_COMPONENT_NAME;
+                return typeof(ChargeAfterAdminOrderViewComponent);
             }
 
             if (widgetZone.Equals(AdminWidgetZones.ProductDetailsBlock))
             {
-                return Defaults.ADMIN_PRODUCT_VIEW_COMPONENT_NAME;
+                return typeof(ChargeAfterAdminProductViewComponent);
             }
 
             if (widgetZone.Equals(PublicWidgetZones.ProductDetailsAddInfo))
-                return Defaults.PROMO_LINE_OF_CREDIT_VIEW_COMPONENT_NAME;
+                return typeof(ChargeAfterPromoLineOfCreditViewComponent);
 
-            if (widgetZone.Equals(PublicWidgetZones.ContentBefore) || 
+            if (widgetZone.Equals(PublicWidgetZones.ContentBefore) ||
                 widgetZone.Equals(PublicWidgetZones.ContentAfter))
             {
-                return Defaults.PROMO_SIMPLE_GLOBAL_VIEW_COMPONENT_NAME;
+                return typeof(ChargeAfterPromoSimpleGlobalViewComponent);
             }
 
             if (widgetZone.Equals(PublicWidgetZones.ProductDetailsEssentialTop) ||
                 widgetZone.Equals(PublicWidgetZones.ProductDetailsOverviewTop) ||
                 widgetZone.Equals(PublicWidgetZones.ProductDetailsEssentialBottom))
             {
-                return Defaults.PROMO_SIMPLE_PRODUCT_VIEW_COMPONENT_NAME;
+                return typeof(ChargeAfterPromoSimpleProductViewComponent);
             }
 
-            return Defaults.PROMO_SCRIPT_VIEW_COMPONENT_NAME;
+            return typeof(ChargeAfterPromoScriptViewComponent);
         }
 
         #endregion

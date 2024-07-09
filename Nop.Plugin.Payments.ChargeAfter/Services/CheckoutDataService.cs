@@ -121,7 +121,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             var shoppingCartItems = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, currentStore.Id);
             if (!shoppingCartItems.Any())
                 throw new NopException("Cart is empty. Please try again");
-            
+
             var workingCurrency = await _workContext.GetWorkingCurrencyAsync();
 
             foreach (var sci in shoppingCartItems)
@@ -159,7 +159,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                 };
 
                 var warranty = await _productAttributeService.GetWarrantyAttributeValueAsync(product);
-                if (warranty)
+                if(warranty)
                 {
                     itemModel.Warranty = new CheckoutModel.CheckoutItemModel.WarrantyItemModel
                     {
@@ -178,24 +178,28 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                 NopCustomerDefaults.CheckoutAttributes,
                 currentStore.Id
             );
-            checkoutAttributesXml = await _checkoutAttributeParser.EnsureOnlyActiveAttributesAsync(checkoutAttributesXml, shoppingCartItems);
 
+            checkoutAttributesXml = await _checkoutAttributeParser.EnsureOnlyActiveAttributesAsync(checkoutAttributesXml, shoppingCartItems);
+            
             var attributes = await _checkoutAttributeParser.ParseCheckoutAttributesAsync(checkoutAttributesXml);
             for (var i = 0; i < attributes.Count; i++)
             {
                 var attribute = attributes[i];
                 var valuesStr = _checkoutAttributeParser.ParseValues(checkoutAttributesXml, attribute.Id);
+
                 for (var j = 0; j < valuesStr.Count; j++)
                 {
                     var valueStr = valuesStr[j];
+
                     if (int.TryParse(valueStr, out var attributeValueId))
                     {
                         var attributeValue = await _checkoutAttributeService.GetCheckoutAttributeValueByIdAsync(attributeValueId);
+
                         if (attributeValue != null)
                         {
                             var priceAdjustmentBase = (await _taxService.GetCheckoutAttributePriceAsync(attribute, attributeValue, customer)).price;
                             var priceAdjustment = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(priceAdjustmentBase, await _workContext.GetWorkingCurrencyAsync());
-
+                            
                             if (priceAdjustmentBase > 0)
                             {
                                 // checkout item
@@ -207,6 +211,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                                     UnitPrice = priceAdjustment,
                                     Leasable = true
                                 };
+
                                 model.Items.Add(itemModel);
                             }
                         }
@@ -287,6 +292,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
             if (customer.BillingAddressId == null)
                 throw new NopException("Invalid customer billing information");
 
+            var caHost = ChargeAfterHelper.GetCaHostByUseProduction(_settings.UseProduction);
             var billingAddress = await _addressService.GetAddressByIdAsync((int)customer.BillingAddressId);
 
             var shippingAddress = billingAddress;

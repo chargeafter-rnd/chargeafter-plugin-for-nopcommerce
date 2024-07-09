@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Plugin.Payments.ChargeAfter.Domain;
+using Nop.Plugin.Payments.ChargeAfter.Models;
 using Nop.Services.Cms;
 using Nop.Web.Framework.Components;
 using Nop.Web.Framework.Infrastructure;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Components
 {
-    [ViewComponent(Name = Defaults.PROMO_SCRIPT_VIEW_COMPONENT_NAME)]
+    [ViewComponent(Name = "ChargeAfterPromoScript")]
     public class ChargeAfterPromoScriptViewComponent : NopViewComponent
     {
         #region Fields

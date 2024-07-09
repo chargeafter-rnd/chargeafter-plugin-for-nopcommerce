@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <Copyright>Copyright © ChargeAfter</Copyright>
         <Company>ChargeAfter</Company>
         <Authors>ChargeAfter</Authors>
@@ -15,11 +15,6 @@
         the dlls copied from the NuGet cache to the output of your project-->
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
-    <ItemGroup>
-      <Compile Remove="Views\Configuration\**" />
-      <EmbeddedResource Remove="Views\Configuration\**" />
-      <None Remove="Views\Configuration\**" />
-    </ItemGroup>
 
     <ItemGroup>
         <None Remove="logo.png" />
@@ -35,10 +30,10 @@
         <None Remove="Areas\Admin\Views\_ViewImports.cshtml" />
         <None Remove="Areas\Admin\Views\Order.cshtml" />
         <None Remove="Areas\Admin\Views\Product.cshtml" />
-		<None Remove="Areas\Admin\Views\Configure.cshtml" />
-
-		<None Remove="Content\chargeafterloader.css" />
-		<None Remove="Content\chargeafterloader.js" />
+        <None Remove="Areas\Admin\Views\Configure.cshtml" />
+      
+        <None Remove="Content\chargeafterloader.css" />
+        <None Remove="Content\chargeafterloader.js" />
     </ItemGroup>
 
 	<ItemGroup>
@@ -88,7 +83,7 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 		<Content Include="Areas\Admin\Views\Configure.cshtml">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 	</ItemGroup>
 

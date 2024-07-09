@@ -27,7 +27,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
         private readonly IPermissionService _permissionService;
         private readonly ISettingService _settingService;
         private readonly IStoreContext _storeContext;
-
+        
         #endregion
 
         #region Ctor
@@ -122,7 +122,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                 model.AdditionalFeePercentage_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.AdditionalFeePercentage, storeScope);
 
                 model.TypeTransaction_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.TypeTransaction, storeScope);
-
+                
                 model.TypeCheckoutBrand_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.TypeCheckoutBrand, storeScope);
 
                 model.EnableLineOfCreditPromo_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.EnableLineOfCreditPromo, storeScope);
@@ -143,8 +143,6 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
 
                 model.EnableSimplePromoProductAfterDesc_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.EnableSimplePromoProductAfterDesc, storeScope);
                 model.WidgetTypeSimplePromoProductAfterDescId_OverrideForStore = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.WidgetTypeSimplePromoProductAfterDesc, storeScope);
-
-                model.EnableAdvancedSetting = await _settingService.SettingExistsAsync(chargeAfterPaymentSettings, x => x.EnableAdvancedSetting, storeScope);
             }
 
             // ReSharper disable once Mvc.ViewNotResolved
@@ -179,7 +177,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
             chargeAfterPaymentSettings.TypeTransaction = (Domain.TransactionType)model.TypeTransaction;
 
             chargeAfterPaymentSettings.TypeCheckoutBrand = (Domain.Promo.CheckoutBrandType)model.TypeCheckoutBrand;
-
+            
             chargeAfterPaymentSettings.EnableLineOfCreditPromo = model.EnableLineOfCreditPromo;
             chargeAfterPaymentSettings.TypeLineOfCreditPromo = (Domain.Promo.LineOfCreditType)model.TypeLineOfCreditPromo;
             chargeAfterPaymentSettings.FinancingPageUrlLineOfCreditPromo = model.FinancingPageUrlLineOfCreditPromo;
@@ -213,10 +211,10 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
             await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.AdditionalFee, model.AdditionalFee_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.AdditionalFeePercentage, model.AdditionalFeePercentage_OverrideForStore, storeScope, false);
 
-            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.TypeTransaction, model.TypeTransaction_OverrideForStore, storeScope, false); 
+            await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.TypeTransaction, model.TypeTransaction_OverrideForStore, storeScope, false);
             
             await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.TypeCheckoutBrand, model.TypeCheckoutBrand_OverrideForStore, storeScope, false);
-            
+
             await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.EnableLineOfCreditPromo, model.EnableLineOfCreditPromo_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.TypeLineOfCreditPromo, model.TypeLineOfCreditPromo_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.FinancingPageUrlLineOfCreditPromo, model.FinancingPageUrlLineOfCreditPromo_OverrideForStore, storeScope, false);
@@ -262,13 +260,12 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
              * This behavior can increase performance because cached settings will not be cleared 
              * and loaded from database after each update */
             await _settingService.SaveSettingOverridablePerStoreAsync(chargeAfterPaymentSettings, x => x.EnableAdvancedSetting, value, storeScope, false);
-
+            
             //now clear settings cache
             await _settingService.ClearCacheAsync();
 
             return Json(new { Result = true });
         }
-
 
         #endregion
 

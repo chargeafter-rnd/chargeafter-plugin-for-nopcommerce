@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Components
 {
-    [ViewComponent(Name = Defaults.ADMIN_PRODUCT_VIEW_COMPONENT_NAME)]
+    [ViewComponent(Name = "ChargeAfterAdminProduct")]
     public class ChargeAfterAdminProductViewComponent : NopViewComponent
     {
         #region Fields

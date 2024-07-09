@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using Nop.Plugin.Payments.ChargeAfter.Domain.Promo;
 using Nop.Web.Framework.Models;
 using Nop.Web.Framework.Mvc.ModelBinding;
 using System.ComponentModel.DataAnnotations;

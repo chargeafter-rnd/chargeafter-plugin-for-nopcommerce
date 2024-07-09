@@ -1,10 +1,6 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
-using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Text;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Core.Http
 {

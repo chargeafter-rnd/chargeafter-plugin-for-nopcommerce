@@ -40,7 +40,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
 
         #region Methods
 
-        private Task<bool> GetAttributeValue(Product product, string attributeName)
+        private Task<bool> GetAttributeValue(Product product, string attributeName) 
             => _genericAttributeService.GetAttributeAsync<bool>(
                 product,
                 attributeName,
@@ -48,7 +48,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                 false
             );
 
-        private Task SetAttributeValue(Product product, string attributeName, bool attributeValue)
+        private Task SetAttributeValue(Product product, string attributeName, bool attributeValue) 
             => _genericAttributeService.SaveAttributeAsync<bool>(
                 product,
                 attributeName,
@@ -56,16 +56,16 @@ namespace Nop.Plugin.Payments.ChargeAfter.Services
                 _storeContext.GetCurrentStore()?.Id ?? 0
             );
 
-        public Task<bool> GetNonLeasableAttributeValueAsync(Product product)
+        public Task<bool> GetNonLeasableAttributeValueAsync(Product product) 
             => GetAttributeValue(product, Defaults.NonLeasableAttribute);
 
-        public Task SetNonLeasableAttributeValueAsync(Product product, bool nonLeasableValue)
+        public Task SetNonLeasableAttributeValueAsync(Product product, bool nonLeasableValue) 
             => SetAttributeValue(product, Defaults.NonLeasableAttribute, nonLeasableValue);
 
-        public Task<bool> GetWarrantyAttributeValueAsync(Product product)
+        public Task<bool> GetWarrantyAttributeValueAsync(Product product) 
             => GetAttributeValue(product, Defaults.WarrantyAttribute);
 
-        public Task SetWarrantyAttributeValueAsync(Product product, bool warrantyValue)
+        public Task SetWarrantyAttributeValueAsync(Product product, bool warrantyValue) 
           => SetAttributeValue(product, Defaults.WarrantyAttribute, warrantyValue);
 
         #endregion

@@ -21,6 +21,7 @@ using Nop.Web.Areas.Admin.Controllers;
 using Nop.Web.Areas.Admin.Factories;
 using Nop.Web.Areas.Admin.Models.Catalog;
 using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
@@ -37,39 +38,42 @@ namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
         #region Ctor
 
         public PaymentChargeAfterProductController(
-            IAclService aclService, 
-            IBackInStockSubscriptionService backInStockSubscriptionService, 
-            ICategoryService categoryService, 
-            ICopyProductService copyProductService, 
-            ICustomerActivityService customerActivityService, 
-            ICustomerService customerService, 
-            IDiscountService discountService, 
-            IDownloadService downloadService, 
-            IExportManager exportManager, 
-            IImportManager importManager, 
+            IAclService aclService,
+            IBackInStockSubscriptionService backInStockSubscriptionService,
+            ICategoryService categoryService,
+            ICopyProductService copyProductService,
+            ICustomerActivityService customerActivityService,
+            ICustomerService customerService,
+            IDiscountService discountService,
+            IDownloadService downloadService,
+            IExportManager exportManager,
+            IGenericAttributeService genericAttributeService,
+            IHttpClientFactory httpClientFactory,
+            IImportManager importManager,
             ILanguageService languageService,
-            ILocalizationService localizationService, 
-            ILocalizedEntityService localizedEntityService, 
-            IManufacturerService manufacturerService, 
-            INopFileProvider fileProvider, 
-            INotificationService notificationService, 
-            IPdfService pdfService, 
-            IPermissionService permissionService, 
-            IPictureService pictureService, 
-            IProductAttributeParser productAttributeParser, 
-            IProductAttributeService productAttributeService, 
-            IProductAttributeFormatter productAttributeFormatter, 
-            IProductModelFactory productModelFactory, 
-            IProductService productService, 
-            IProductTagService productTagService, 
-            ISettingService settingService, 
-            IShippingService shippingService, 
-            IShoppingCartService shoppingCartService, 
-            ISpecificationAttributeService specificationAttributeService, 
-            IStoreContext storeContext, 
-            IUrlRecordService urlRecordService, 
-            IGenericAttributeService genericAttributeService, 
-            IWorkContext workContext, 
+            ILocalizationService localizationService,
+            ILocalizedEntityService localizedEntityService,
+            IManufacturerService manufacturerService,
+            INopFileProvider fileProvider,
+            INotificationService notificationService,
+            IPdfService pdfService,
+            IPermissionService permissionService,
+            IPictureService pictureService,
+            IProductAttributeFormatter productAttributeFormatter,
+            IProductAttributeParser productAttributeParser,
+            IProductAttributeService productAttributeService,
+            IProductModelFactory productModelFactory,
+            IProductService productService,
+            IProductTagService productTagService,
+            ISettingService settingService,
+            IShippingService shippingService,
+            IShoppingCartService shoppingCartService,
+            ISpecificationAttributeService specificationAttributeService,
+            IStoreContext storeContext,
+            IUrlRecordService urlRecordService,
+            IVideoService videoService,
+            IWebHelper webHelper,
+            IWorkContext workContext,
             VendorSettings vendorSettings,
             ICustomProductAttributeService customProductAttributeService) : base(
                 aclService,
@@ -81,6 +85,8 @@ namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
                 discountService,
                 downloadService,
                 exportManager,
+                genericAttributeService,
+                httpClientFactory,
                 importManager,
                 languageService,
                 localizationService,
@@ -91,9 +97,9 @@ namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
                 pdfService,
                 permissionService,
                 pictureService,
+                productAttributeFormatter,
                 productAttributeParser,
                 productAttributeService,
-                productAttributeFormatter,
                 productModelFactory,
                 productService,
                 productTagService,
@@ -103,7 +109,8 @@ namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
                 specificationAttributeService,
                 storeContext,
                 urlRecordService,
-                genericAttributeService,
+                videoService,
+                webHelper,
                 workContext,
                 vendorSettings)
         {
@@ -118,17 +125,16 @@ namespace Nop.Plugin.Payments.ChargeAfter.Areas.Admin.Controllers
         public override async Task<IActionResult> Edit(ProductModel model, bool continueEditing)
         {
             var action = await base.Edit(model, continueEditing);
-
             if (ModelState.IsValid)
             {
                 var product = await _productService.GetProductByIdAsync(model.Id);
 
-                if (HttpContext.Request.Form.TryGetValue("CaNonLeasable", out var nonLeasableValues))
+                if(HttpContext.Request.Form.TryGetValue("CaNonLeasable", out var nonLeasableValues))
                 {
                     await _customProductAttributeService.SetNonLeasableAttributeValueAsync(product, Convert.ToBoolean(nonLeasableValues[0]));
                 }
 
-                if (HttpContext.Request.Form.TryGetValue("CaWarranty", out var warrantyValues))
+                if(HttpContext.Request.Form.TryGetValue("CaWarranty", out var warrantyValues))
                 {
                     await _customProductAttributeService.SetWarrantyAttributeValueAsync(product, Convert.ToBoolean(warrantyValues[0]));
                 }

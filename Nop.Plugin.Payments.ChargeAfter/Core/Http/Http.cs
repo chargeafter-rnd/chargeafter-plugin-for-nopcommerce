@@ -76,7 +76,7 @@ namespace Nop.Plugin.Payments.ChargeAfter.Core.Http
                 HttpErrorResponse responseBody = null;
                 var responseBodyAsString = await response.Content.ReadAsStringAsync();
 
-                if (response.Content.Headers.ContentType != null)
+                if(response.Content.Headers.ContentType != null)
                 {
                     responseBody = (HttpErrorResponse)Encoder.DeserializeResponse(response.Content, typeof(HttpErrorResponse));
                 }

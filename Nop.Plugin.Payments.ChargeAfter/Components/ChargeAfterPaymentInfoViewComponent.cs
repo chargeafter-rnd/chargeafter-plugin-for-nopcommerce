@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Components
 {
-    [ViewComponent(Name = Defaults.PAYMENT_INFO_VIEW_COMPONENT_NAME)]
+    [ViewComponent(Name = "ChargeAfterPaymentInfo")]
     public class ChargeAfterPaymentInfoViewComponent : NopViewComponent
     {
         private readonly ChargeAfterPaymentSettings _chargeAfterPaymentSettings;
