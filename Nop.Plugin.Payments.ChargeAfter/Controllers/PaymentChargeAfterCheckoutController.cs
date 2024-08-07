@@ -13,6 +13,7 @@ using System.Linq;
 using Nop.Core.Domain.Customers;
 using Nop.Services.Common;
 using System.Threading.Tasks;
+using Nop.Plugin.Payments.ChargeAfter.Domain;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Controllers
 {
@@ -61,12 +62,14 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
 
         [HttpPost]
         [IgnoreAntiforgeryToken]
-        public async Task<IActionResult> PlaceAsync(IFormCollection form)
+        public async Task<IActionResult> PlaceAsync(PaymentPlace form)
         {
             try {
-                var confirmationToken = GetValue("ca_token", form).ToString();
-                if (string.IsNullOrEmpty(confirmationToken))
-                {
+                ArgumentNullException.ThrowIfNull(form);
+
+                var confirmationToken = form.Token; 
+                if (string.IsNullOrEmpty(confirmationToken)) 
+                { 
                     throw new NopException("Incorrect confirmation token");
                 }
 
@@ -80,7 +83,6 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                 {
                     throw new NopException("Your cart is empty");
                 }
-
 
                 var processPaymentRequest = await HttpContext.Session.GetAsync<ProcessPaymentRequest>(ProcessPaymentRequestKey);
                 if (processPaymentRequest == null)
@@ -102,6 +104,11 @@ namespace Nop.Plugin.Payments.ChargeAfter.Controllers
                     currentStoreId
                 );
                 processPaymentRequest.CustomValues.Add(Constants.CA_TOKEN_KEY, confirmationToken);
+
+                if (!string.IsNullOrEmpty(form.Data?.Lender?.Information?.LeaseId))
+                {
+                    processPaymentRequest.CustomValues.Add(Constants.CA_LEASE_ID_KEY, form.Data.Lender.Information.LeaseId);
+                }
 
                 await HttpContext.Session.SetAsync<ProcessPaymentRequest>("OrderPaymentInfo", processPaymentRequest);
                 var placeOrderResult = await _orderProcessingService.PlaceOrderAsync(processPaymentRequest);
