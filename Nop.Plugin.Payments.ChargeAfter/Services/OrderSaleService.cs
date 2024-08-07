@@ -2,8 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Nop.Core;
-using Nop.Core.Domain.Orders;
-using Nop.Core.Infrastructure;
 using Nop.Services.Localization;
 using Nop.Services.Logging;
 using Nop.Services.Orders;

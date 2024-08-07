@@ -45,7 +45,7 @@
                         returnError(error.message);
                     }
                 } else if (token) {
-                    returnSuccess(token);
+                    returnSuccess(token, data);
                 }
             },
         };
@@ -53,9 +53,9 @@
         ChargeAfter.checkout.present(caData);
     }
 
-    function returnSuccess(token) {
+    function returnSuccess(token, data) {
         console.log('Set confirmation token request: ' + token);
-        createForm('ca_form_success', '@Url.RouteUrl(Defaults.CheckoutPlaceRouteName)', token);
+        createForm('ca_form_success', '@Url.RouteUrl(Defaults.CheckoutPlaceRouteName)', token, data);
     }
 
     function returnError(msg) {
@@ -65,12 +65,12 @@
         }
     }
 
-    function createForm(id, action, ca_token) {
+    function createForm(id, action, ca_token, data) {
         if (window.caloader) {
             window.caloader.activate();
         }
 
-        $.post(action, { ca_token: ca_token })
+        $.post(action, { ca_token, data })
             .done(function (response) {
                 console.log(response);
                 if (response.redirect) {

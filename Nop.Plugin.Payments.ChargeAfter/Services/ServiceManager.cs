@@ -9,7 +9,22 @@ using System.Linq;
 
 namespace Nop.Plugin.Payments.ChargeAfter.Services
 {
-    public class ServiceManager
+    public interface IServiceManager
+    {
+        public (Charge Charge, string ErrorMessage) Authorization(ChargeAfterPaymentSettings chargeAfterPaymentSettings, string confirmationToken);
+
+        public (Charge Charge, string ErrorMessage) SetMerchantOrderId(ChargeAfterPaymentSettings chargeAfterPaymentSettings, string chargeId, string orderId);
+
+        public (Charge Charge, string ErrorMessage) GetChargeById(ChargeAfterPaymentSettings chargeAfterPaymentSettings, string chargeId);
+
+        public (ChargeCapture ChargeCapture, string ErrorMessage) Capture(ChargeAfterPaymentSettings chargeAfterPaymentSettings, string chargeId, decimal amount);
+
+        public (ChargeRefund ChargeRefund, string ErrorMessage) Refund(ChargeAfterPaymentSettings chargeAfterPaymentSettings, string chargeId, decimal amount);
+
+        public (ChargeVoid ChargeVoid, string ErrorMessage) Void(ChargeAfterPaymentSettings chargeAfterPaymentSettings, string chargeId);
+    }
+
+    public class ServiceManager : IServiceManager
     {
         #region Methods
 
