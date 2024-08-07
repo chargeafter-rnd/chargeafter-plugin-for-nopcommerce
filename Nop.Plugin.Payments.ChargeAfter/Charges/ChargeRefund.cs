@@ -7,6 +7,9 @@ namespace Nop.Plugin.Payments.ChargeAfter.Charges
     {
         public ChargeRefund() { }
 
+        [DataMember(Name = "id", EmitDefaultValue = false)]
+        public string Id;
+
         [DataMember(Name = "chargeId", EmitDefaultValue = false)]
         public string ChargeId;
 
